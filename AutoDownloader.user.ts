@@ -5,7 +5,7 @@
 // @description Batch download torrents from nyaa.si
 // @include     *://nyaa.si/user/*?q=*
 // @include     *://nyaa.si/user/*?f=*&c=*&q=*
-// @version     6.1.2.1
+// @version     7
 // @icon        https://i.imgur.com/nx5ejHb.png
 // @license     MIT
 // @run-at      document-idle
