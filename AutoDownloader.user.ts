@@ -13,7 +13,7 @@
 // @require     https://greasyfork.org/scripts/19117-jsutils/code/JsUtils.js
 // @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js
 // ==/UserScript==
-
+"use strict";
 import Deferred = JQuery.Deferred;
 import jqXHR = JQuery.jqXHR;
 
