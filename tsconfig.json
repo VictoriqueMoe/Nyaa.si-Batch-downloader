@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "alwaysStrict":true,
+    "strict" : true,
+    "strictNullChecks":false,
+    "sourceMap": false,
+   // "outFile": "AutoDownloader.user.js",
+    "baseUrl": "/",
+    "checkJs": false,
+    "allowJs": false,
+    "target": "esnext",
+    "module": "none"
+  },
+  "compileOnSave": false,
+  "exclude": ["*.js"],
+
+}
