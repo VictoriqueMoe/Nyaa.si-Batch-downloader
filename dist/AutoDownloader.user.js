@@ -11,6 +11,7 @@
 // @license     MIT
 // @run-at      document-idle
 // @grant       none
+// @require     https://greasyfork.org/scripts/19117-jsutils/code/JsUtils.js
 // @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js
 // ==/UserScript==
 
