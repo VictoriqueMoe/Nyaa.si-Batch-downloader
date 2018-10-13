@@ -15,7 +15,7 @@
 import Deferred = JQuery.Deferred;
 import jqXHR = JQuery.jqXHR;
 
-//TODO: refactor this into interfaces
+//TODO: refactor this into interfaces.
 type resType = { res: number, fullRes: string };
 type ajaxInfo = { error: { pageAtError: number }, currentPage: number };
 type jsonType = { [key: string]: any }
