@@ -10,12 +10,13 @@
 // @license     MIT
 // @run-at      document-idle
 // @grant       none
+// @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js
 // ==/UserScript==
 
 import Deferred = JQuery.Deferred;
 import jqXHR = JQuery.jqXHR;
 
-//TODO: refactor this into interfaces.
+//TODO: refactor this into interfaces
 type resType = { res: number, fullRes: string };
 type ajaxInfo = { error: { pageAtError: number }, currentPage: number };
 type jsonType = { [key: string]: any }
