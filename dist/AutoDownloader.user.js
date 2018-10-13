@@ -393,6 +393,18 @@ var Anime = function (_AbstractEps2) {
             return _get(Anime.__proto__ || Object.getPrototypeOf(Anime), 'abstractGetEps', this).call(this, true).length;
         }
     }, {
+        key: 'getEpisodeFromUrl',
+        value: function getEpisodeFromUrl(url) {
+            var eps = _get(Anime.__proto__ || Object.getPrototypeOf(Anime), 'abstractGetEps', this).call(this, true);
+            for (var i = 0, len = eps.length; i < len; i++) {
+                var ep = eps[i];
+                if (ep.downloadLink === url) {
+                    return ep;
+                }
+            }
+            return null;
+        }
+    }, {
         key: 'currentAnime',
         get: function get() {
             return Anime._currentAnime;
@@ -439,6 +451,8 @@ var Utils = function () {
         value: function downloadViaJavaScript(url, data, callBack) {
             var _type = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "POST";
 
+            var fileName = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+
             var xhr = new XMLHttpRequest();
             xhr.open(_type, url, true);
             xhr.responseType = "blob";
@@ -459,8 +473,7 @@ var Utils = function () {
                         }
                     }
                     var contentDispositionHeader = xhr.getResponseHeader("Content-Disposition");
-                    var fileName = "untitled.txt";
-                    if (contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
+                    if (fileName == null && contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
                         fileName = contentDispositionHeader.split("filename").pop();
                         fileName = fileName.replace("=", "");
                         fileName = fileName.trim();
@@ -475,7 +488,8 @@ var Utils = function () {
                     var blob = xhr.response;
                     var returnFunction = function save(blob, fileName, hasError, error) {
                         if (hasError) {
-                            alert(error);
+                            var _error = "Unable to download file: '" + fileName + "' Please download this file manually";
+                            alert(_error);
                             return;
                         }
                         saveAs(blob, fileName, true);
@@ -626,7 +640,6 @@ var Utils = function () {
                 });
             } else if (type === 'downloadSelects') {
                 $.each($('#animeSelection option:selected'), function () {
-                    // @ts-ignore
                     var url = this.dataset.url;
                     urlsToDownload.push(url);
                 });
@@ -651,10 +664,11 @@ var Utils = function () {
 
                 var _loop = function _loop(_i2) {
                     var currentUrl = urls[_i2];
+                    var ep = Anime.getEpisodeFromUrl(currentUrl);
                     setTimeout(function () {
                         Utils.downloadViaJavaScript(currentUrl, undefined, function (downloadFunc) {
                             downloadFunc();
-                        }, "GET");
+                        }, "GET", ep.title.replace(/ /g, "_") + ".torrent");
                     }, timerOffset);
                     timerOffset += 350;
                 };
@@ -753,8 +767,8 @@ var Utils = function () {
             var bits = 0;
             if (Array.isArray(from)) {
                 for (var i = 0; i < from.length; i++) {
-                    var ep = from[i];
-                    bits += ep.size;
+                    var _ep = from[i];
+                    bits += _ep.size;
                 }
             } else if (typeof from === 'number') {
                 bits = from;
@@ -960,9 +974,9 @@ var UI = function () {
             var rxp = new RegExp(textToFilter);
             var optlist = $('#animeSelection').empty();
             for (var i = 0, len = opts.length; i < len; i++) {
-                var ep = opts[i];
-                if (rxp.test(ep.title)) {
-                    optlist.append('<option data-url=\'' + ep.downloadLink + '\'>' + ep.title + ' - Seeders: ' + ep.seeds + '</option>');
+                var _ep2 = opts[i];
+                if (rxp.test(_ep2.title)) {
+                    optlist.append('<option data-url=\'' + _ep2.downloadLink + '\'>' + _ep2.title + ' - Seeders: ' + _ep2.seeds + '</option>');
                 }
             }
             UI.searchApplied = textToFilter;

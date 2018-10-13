@@ -373,13 +373,24 @@ class Anime extends _AbstractEps {
     public static getAmountOfEps(): number {
         return super.abstractGetEps(true).length;
     }
+
+    public static getEpisodeFromUrl(url:string):Episode {
+        let eps:Array<Episode> = super.abstractGetEps(true);
+        for (let i:number = 0, len:number = eps.length; i < len; i++)  {
+            let ep:Episode = eps[i];
+            if(ep.downloadLink === url){
+                return ep;
+            }
+        }
+        return null;
+    }
 }
 
 class Utils {
     private constructor() {
     }
 
-    public static downloadViaJavaScript(url: string, data: any, callBack: (downloadFunc:Function) => void, _type: string = "POST"): void {
+    public static downloadViaJavaScript(url: string, data: any, callBack: (downloadFunc:Function) => void, _type: string = "POST", fileName:string = null): void {
         let xhr: XMLHttpRequest = new XMLHttpRequest();
         xhr.open(_type, url, true);
         xhr.responseType = "blob";
@@ -401,8 +412,7 @@ class Utils {
                     }
                 }
                 let contentDispositionHeader:string = xhr.getResponseHeader("Content-Disposition");
-                let fileName:string = "untitled.txt";
-                if (contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
+                if (fileName == null && contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
                     fileName = contentDispositionHeader.split("filename").pop();
                     fileName = fileName.replace("=", "");
                     fileName = fileName.trim();
@@ -420,6 +430,7 @@ class Utils {
 
                 let returnFunction = function save(blob: Blob, fileName: string, hasError: boolean, error: string) {
                     if (hasError) {
+                        let error:string = "Unable to download file: '" +fileName+ "' Please download this file manually";
                         alert(error);
                         return;
                     }
@@ -561,7 +572,6 @@ class Utils {
             });
         } else if (type === 'downloadSelects') {
             $.each($('#animeSelection option:selected'), function () {
-                // @ts-ignore
                 let url: string = this.dataset.url;
                 urlsToDownload.push(url);
             });
@@ -587,10 +597,11 @@ class Utils {
             let timerOffset:number = 0;
             for (let i: number = 0; i < urls.length; i++) {
                 let currentUrl: string = urls[i];
+                let ep:Episode = Anime.getEpisodeFromUrl(currentUrl);
                 setTimeout(()=>{
                     Utils.downloadViaJavaScript(currentUrl, undefined ,(downloadFunc) =>{
                         downloadFunc();
-                    }, "GET");
+                    }, "GET", ep.title.replace(/ /g,"_")+".torrent");
                 }, timerOffset);
                 timerOffset += 350;
             }
