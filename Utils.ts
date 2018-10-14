@@ -231,12 +231,13 @@ class Utils {
                     let error:string = arg[2];
                     if(error !== null){
                         errors.push(fileName);
+                    }else{
+                        zip.file(fileName, blob);
                     }
-                    if(errors.length > 0){
-                        let errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
-                        alert(errorMessage);
-                    }
-                    zip.file(fileName, blob);
+                }
+                if(errors.length > 0){
+                    let errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
+                    alert(errorMessage);
                 }
                 $("#progressStatus").text("Generating zip file...");
                 zip.generateAsync({type: "blob"}).then(function (blob: Blob) {
