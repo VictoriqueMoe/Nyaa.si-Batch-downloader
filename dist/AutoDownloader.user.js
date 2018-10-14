@@ -1,18 +1,3 @@
-// ==UserScript==
-// @name        Nyaa.si Batch downloader
-// @namespace   Autodownload
-// @author      Victorique
-// @description Batch download torrents from nyaa.si
-// @include     *://nyaa.si/user/*?q=*
-// @include     *://nyaa.si/user/*?f=*&c=*&q=*
-// @version     7.0.1
-// @icon        https://i.imgur.com/nx5ejHb.png
-// @license     MIT
-// @run-at      document-idle
-// @grant       none
-// @require     https://greasyfork.org/scripts/19117-jsutils/code/JsUtils.js
-// @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js
-// ==/UserScript==
 "use strict";
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -486,15 +471,15 @@ var Utils = function () {
                         mediaType = "application/octet-stream";
                     }
                     var blob = xhr.response;
-                    var returnFunction = function save(blob, fileName, hasError, error) {
+                    /*let returnFunction = function save() {
                         if (hasError) {
-                            var _error = "Unable to download file: '" + fileName + "' Please download this file manually";
-                            alert(_error);
+                            let error:string = "Unable to download file: '" +fileName+ "' Please download this file manually";
+                            alert(error);
                             return;
                         }
-                        saveAs(blob, fileName, true);
-                    }.bind(this, blob, fileName, hasError, error);
-                    callBack.call(this, returnFunction);
+                    }.bind(this, );*/
+                    var saveAsFunc = saveAs.bind(blob, fileName, true);
+                    callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
                 } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
                     if (xhr.status !== 200) {
                         xhr.responseType = "text";
@@ -656,26 +641,84 @@ var Utils = function () {
                     $('#crossPage').prop('disabled', false);
                 });
                 $('#alertButton').on('click', function () {
-                    doIt(urlsToDownload);
+                    doIt(urlsToDownload, false);
+                });
+                $("#downloadZip").on("click", function () {
+                    doIt(urlsToDownload, true);
                 });
             }
-            function doIt(urls) {
+            function doIt(urls, asZip) {
+                var ajaxPromiseMap = new Map();
+                var arrayd = [];
+                for (var _i2 = 0; _i2 < urls.length; _i2++) {
+                    var d = $.Deferred();
+                    ajaxPromiseMap.set(urls[_i2], d);
+                    arrayd.push(d);
+                }
+                $.when.apply($, arrayd).done(function () {
+                    if (!asZip) {
+                        return;
+                    }
+                    // @ts-ignore
+                    var zip = new JSZip();
+                    for (var _i3 = 0; _i3 < arguments.length; _i3++) {
+                        var arg = arguments[_i3];
+                        var blob = arg[0];
+                        var fileName = arg[1];
+                        zip.file(fileName, blob);
+                    }
+                    zip.generateAsync({ type: "blob" }).then(function (blob) {
+                        saveAs(blob, Anime.currentAnime + ".zip");
+                    }, function (err) {
+                        alert(err);
+                    });
+                });
                 var timerOffset = 0;
 
-                var _loop = function _loop(_i2) {
-                    var currentUrl = urls[_i2];
+                var _loop = function _loop(currentUrl, deferr) {
                     var ep = Anime.getEpisodeFromUrl(currentUrl);
+                    var fileName = ep.title.replace(/ /g, "_") + ".torrent";
                     setTimeout(function () {
-                        Utils.downloadViaJavaScript(currentUrl, undefined, function (downloadFunc) {
-                            downloadFunc();
-                        }, "GET", ep.title.replace(/ /g, "_") + ".torrent");
+                        Utils.downloadViaJavaScript(currentUrl, undefined, function (blob, fileName, hasError, error, saveFunc) {
+                            deferr.resolve(blob, fileName);
+                            if (!asZip) {
+                                saveFunc();
+                            }
+                        }, "GET", fileName);
                     }, timerOffset);
                     timerOffset += 350;
                 };
 
-                for (var _i2 = 0; _i2 < urls.length; _i2++) {
-                    _loop(_i2);
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = ajaxPromiseMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var _ref = _step.value;
+
+                        var _ref2 = _slicedToArray(_ref, 2);
+
+                        var currentUrl = _ref2[0];
+                        var deferr = _ref2[1];
+
+                        _loop(currentUrl, deferr);
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
                 }
+
                 $('#alertUser').slideUp('slow');
                 $('#crossPage').prop('disabled', false);
             }
@@ -767,8 +810,8 @@ var Utils = function () {
             var bits = 0;
             if (Array.isArray(from)) {
                 for (var i = 0; i < from.length; i++) {
-                    var _ep = from[i];
-                    bits += _ep.size;
+                    var ep = from[i];
+                    bits += ep.size;
                 }
             } else if (typeof from === 'number') {
                 bits = from;
@@ -882,6 +925,9 @@ var UI = function () {
                 totalSize = Anime.getTotalSizeForRes(parseInt(res), false);
             }
             var seedLimit = Localstore.getMinSeedsFromStore();
+            if (seedLimit === "-1") {
+                seedLimit = "none";
+            }
             var html = '';
             html += '<div class=\'alert alert-success\'>';
             html += '<div><strong>Download: ' + res + '</strong></div> <br />';
@@ -892,8 +938,11 @@ var UI = function () {
             html += '<p>You are about to download ' + amountOfAnime + ' ep(s)</p>';
             html += '<p>This will cause ' + amountOfAnime + ' download pop-up(s) Are you sure you want to continue?</p>';
             html += '<p>If there are a lot of eps, your browser might stop responding for a while. This is normal. If you are on Google Chrome, it will ask you to allow multiple-downloads</p>';
-            html += '<button type="button" class="btn btn-success" id=\'alertButton\'>Okay</button>';
-            html += '<button type="button" class="btn btn-warning" id=\'alertButtonCancel\'>Cancel</button>';
+            html += '<button type="button" class="btn btn-warning downloadButton" id=\'alertButtonCancel\'>Cancel</button>';
+            html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
+            html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
+            html += "<div class='hidden' id='loadingContainer'>";
+            html += "</div>";
             html += '</div>';
             return html;
         }
@@ -952,11 +1001,11 @@ var UI = function () {
             html += '</select>';
             html += '<span>Filter select control: </span>';
             var checked = false;
-            for (var _i3 = 0; _i3 < allRes.length; _i3++) {
-                if (resTOFilter == allRes[_i3].res) {
+            for (var _i4 = 0; _i4 < allRes.length; _i4++) {
+                if (resTOFilter == allRes[_i4].res) {
                     checked = true;
                 }
-                html += '<input type=\'radio\' ' + (checked ? 'checked' : '') + ' data-set= \'' + allRes[_i3].res + '\' name=\'filterSelect\'/>' + '<label class="filterLabel">' + (allRes[_i3].res === -1 ? 'Others' : allRes[_i3].res + 'p') + '</label>';
+                html += '<input type=\'radio\' ' + (checked ? 'checked' : '') + ' data-set= \'' + allRes[_i4].res + '\' name=\'filterSelect\'/>' + '<label class="filterLabel">' + (allRes[_i4].res === -1 ? 'Others' : allRes[_i4].res + 'p') + '</label>';
                 checked = false;
             }
             html += '<a id=\'clearResOptions\' data-set=\'none\' >clear resolution filter</a>';
@@ -974,9 +1023,9 @@ var UI = function () {
             var rxp = new RegExp(textToFilter);
             var optlist = $('#animeSelection').empty();
             for (var i = 0, len = opts.length; i < len; i++) {
-                var _ep2 = opts[i];
-                if (rxp.test(_ep2.title)) {
-                    optlist.append('<option data-url=\'' + _ep2.downloadLink + '\'>' + _ep2.title + ' - Seeders: ' + _ep2.seeds + '</option>');
+                var ep = opts[i];
+                if (rxp.test(ep.title)) {
+                    optlist.append('<option data-url=\'' + ep.downloadLink + '\'>' + ep.title + ' - Seeders: ' + ep.seeds + '</option>');
                 }
             }
             UI.searchApplied = textToFilter;
@@ -1169,8 +1218,10 @@ var Main = function () {
                 styles += '.filterLabel{margin-right: 10px;}';
                 styles += '.alert {position:relative;}';
                 styles += '#alertUser, #parseErrors{margin-top: 15px;}';
-                styles += '#alertButton{position:absolute; bottom:5px; right:5px;}';
-                styles += '#alertButtonCancel{position:absolute; bottom:5px; right: 66px;}';
+                styles += ".downloadButton {position:absolute; bottom:5px;}";
+                styles += '#alertButton{right:78px;}';
+                styles += '#alertButtonCancel{right: 5px;}';
+                styles += '#downloadZip{right: 140px;}';
                 styles += '#errorClose{position:absolute; bottom:5px; right: 11px;}';
                 styles += '#animeSelection{width: 100%;}';
                 styles += '#clearResOptions{margin-left: 10px; margin-right: 10px ;cursor: pointer;}';
@@ -1228,7 +1279,7 @@ var Main = function () {
                     html += '<div class=\'selectAnime\' id=\'selectAnime\'>';
                     html += UI.buildSelect();
                     html += '</div>';
-                    html += '<input class="form-control" type=\'text\' id=\'findEp\' placeholder=\'Search Select (or use regex)\' />';
+                    html += '<input class="form-control" type=\'text\' id=\'findEp\' placeholder=\'Search Select (or use regex) \' />';
                     html += '<button class="btn btn-default" disabled id=\'acceptSelect\' data-type=\'downloadSelects\'>Select for download</button>';
                     html += '<div id=\'parseErrors\' class =\'hide\'></div>';
                     $('#pannelContent').html(html);
@@ -1327,32 +1378,32 @@ var Main = function () {
                                 timeOut += 300;
                             };
 
-                            var _iteratorNormalCompletion = true;
-                            var _didIteratorError = false;
-                            var _iteratorError = undefined;
+                            var _iteratorNormalCompletion2 = true;
+                            var _didIteratorError2 = false;
+                            var _iteratorError2 = undefined;
 
                             try {
-                                for (var _iterator = ajaxPromiseMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                                    var _ref = _step.value;
+                                for (var _iterator2 = ajaxPromiseMap[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                                    var _ref3 = _step2.value;
 
-                                    var _ref2 = _slicedToArray(_ref, 2);
+                                    var _ref4 = _slicedToArray(_ref3, 2);
 
-                                    var cur = _ref2[0];
-                                    var deferr = _ref2[1];
+                                    var cur = _ref4[0];
+                                    var deferr = _ref4[1];
 
                                     _loop2(cur, deferr);
                                 }
                             } catch (err) {
-                                _didIteratorError = true;
-                                _iteratorError = err;
+                                _didIteratorError2 = true;
+                                _iteratorError2 = err;
                             } finally {
                                 try {
-                                    if (!_iteratorNormalCompletion && _iterator.return) {
-                                        _iterator.return();
+                                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                                        _iterator2.return();
                                     }
                                 } finally {
-                                    if (_didIteratorError) {
-                                        throw _iteratorError;
+                                    if (_didIteratorError2) {
+                                        throw _iteratorError2;
                                     }
                                 }
                             }

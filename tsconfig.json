@@ -4,14 +4,15 @@
     "strict" : true,
     "strictNullChecks":false,
     "sourceMap": false,
-   // "outFile": "AutoDownloader.user.js",
+    "outFile": "compiled/AutoDownloader.user.js",
     "baseUrl": "/",
     "checkJs": false,
     "allowJs": false,
     "target": "esnext",
-    "module": "none"
+    "module": "none",
+    "allowSyntheticDefaultImports": true,
+    "removeComments": false
   },
   "compileOnSave": false,
-  "exclude": ["*.js"],
-
+  "exclude": ["*.js"]
 }

@@ -1,39 +1,6 @@
-// ==UserScript==
-// @name        Nyaa.si Batch downloader
-// @namespace   Autodownload
-// @author      Victorique
-// @description Batch download torrents from nyaa.si
-// @include     *://nyaa.si/user/*?q=*
-// @include     *://nyaa.si/user/*?f=*&c=*&q=*
-// @version     7.0.1
-// @icon        https://i.imgur.com/nx5ejHb.png
-// @license     MIT
-// @run-at      document-idle
-// @grant       none
-// @require     https://greasyfork.org/scripts/19117-jsutils/code/JsUtils.js
-// @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js
-// ==/UserScript==
 "use strict";
-import Deferred = JQuery.Deferred;
-import jqXHR = JQuery.jqXHR;
-
-//TODO: refactor this into interfaces
-type resType = { res: number, fullRes: string };
-type ajaxInfo = { error: { pageAtError: number }, currentPage: number };
-type jsonType = { [key: string]: any }
-type epInfo = { "currentDownloadLink": string, 'seeds': number, 'leech': number, 'title': string, "uid": string, "size": number };
-
 class Episode {
-    private readonly _res: number;
-    private readonly _downloadLink: string;
-    private readonly _seeds: number;
-    private readonly _leechers: number;
-    private readonly _uid: string;
-    private readonly _resides: number;
-    private readonly _title: string;
-    private readonly _size: number;
-
-    constructor(res: number, downloadLink: string, seeds: number, leechers: number, uid: string, resides: number, title: string, size: number) {
+    constructor(res, downloadLink, seeds, leechers, uid, resides, title, size) {
         this._res = res;
         this._downloadLink = downloadLink;
         this._seeds = seeds;
@@ -43,70 +10,58 @@ class Episode {
         this._title = title;
         this._size = size;
     }
-
-    public get res(): number {
+    get res() {
         return this._res;
     }
-
-    public get downloadLink(): string {
+    get downloadLink() {
         return this._downloadLink;
     }
-
-    public get seeds(): number {
+    get seeds() {
         return this._seeds;
     }
-
-    public get leechers(): number {
+    get leechers() {
         return this._leechers;
     }
-
-    public get uid(): string {
+    get uid() {
         return this._uid;
     }
-
-    public get resides(): number {
+    get resides() {
         return this._resides;
     }
-
-    public get title(): string {
+    get title() {
         return this._title;
     }
-
-    public get size(): number {
+    get size() {
         return this._size;
     }
-
-    public equals(ep: Episode): boolean {
+    equals(ep) {
         return this.uid === ep.uid;
     }
 }
-
-abstract class _AbstractEps {
-    private static eps: Array<Episode> = []; // this is the main array that holds all the episodes per anime
-
-    protected static abstractGetEps(skipSeedLimit: boolean): Array<Episode> {
-        let minSeeds: number = Number.parseInt(Localstore.getMinSeedsFromStore());
+class _AbstractEps {
+    static abstractGetEps(skipSeedLimit) {
+        let minSeeds = Number.parseInt(Localstore.getMinSeedsFromStore());
         if (minSeeds > -1 && skipSeedLimit === false) {
-            let arrayOfEps: Array<Episode> = [];
-            for (let i: number = 0, len: number = _AbstractEps.eps.length; i < len; i++) {
-                let currentEp: Episode = _AbstractEps.eps[i];
+            let arrayOfEps = [];
+            for (let i = 0, len = _AbstractEps.eps.length; i < len; i++) {
+                let currentEp = _AbstractEps.eps[i];
                 if (currentEp.seeds < minSeeds) {
                     continue;
                 }
                 arrayOfEps.push(currentEp);
             }
             return arrayOfEps;
-        } else {
+        }
+        else {
             return _AbstractEps.eps;
         }
     }
-
-    protected static addEp(ep: Episode): void {
+    static addEp(ep) {
         if (Anime.isValidRes(ep.res) === false) {
             throw new TypeError('The Episode supplied does not have a valid resolution');
         }
-        for (let i: number = 0, len: number = _AbstractEps.eps.length; i < len; i++) {
-            let epi: Episode = _AbstractEps.eps[i];
+        for (let i = 0, len = _AbstractEps.eps.length; i < len; i++) {
+            let epi = _AbstractEps.eps[i];
             if (epi.equals(ep)) {
                 console.warn('The episode supplied already exsists, this episode has been ignored');
                 return;
@@ -114,10 +69,9 @@ abstract class _AbstractEps {
         }
         _AbstractEps.eps.push(ep);
     }
-
-    protected static removeEpisodeFromAnime(obj: Episode): void {
-        let arr: Array<Episode> = _AbstractEps.eps;
-        let i: number = arr.length;
+    static removeEpisodeFromAnime(obj) {
+        let arr = _AbstractEps.eps;
+        let i = arr.length;
         while (i--) {
             if (arr[i] === obj) {
                 arr.splice(i, 1);
@@ -125,146 +79,119 @@ abstract class _AbstractEps {
         }
     }
 }
-
+_AbstractEps.eps = []; // this is the main array that holds all the episodes per anime
 class Anime extends _AbstractEps {
-    private constructor() {
+    constructor() {
         super();
     }
-
-    private static _currentAnime: string;
-    private static _currentSubber: string;
-    private static _availableRes: Array<resType> = [];
-    private static _supportedRes: Array<resType> = [{"res": 1080, "fullRes": "1920x1080"}, {
-        "res": 720,
-        "fullRes": "1280x720"
-    }, {"res": 480, "fullRes": "640x480"}, {"res": 360, "fullRes": "640x360"}];
-
-    public static get currentAnime(): string {
+    static get currentAnime() {
         return Anime._currentAnime;
     }
-
-    public static set currentAnime(value: string) {
+    static set currentAnime(value) {
         Anime._currentAnime = value;
     }
-
-    public static get currentSubber(): string {
+    static get currentSubber() {
         return Anime._currentSubber;
     }
-
-    public static set currentSubber(value: string) {
+    static set currentSubber(value) {
         Anime._currentSubber = value;
     }
-
-    public static get supportedRes(): Array<resType> {
+    static get supportedRes() {
         return Anime._supportedRes;
     }
-
-    public static addSupportedRes(res: resType) {
+    static addSupportedRes(res) {
         Anime._supportedRes.push(res);
     }
-
-    public static get availableRes(): Array<resType> {
+    static get availableRes() {
         return Anime._availableRes;
     }
-
-    public static addAvailableResolutions(res: number, fullRes: string): void {
+    static addAvailableResolutions(res, fullRes) {
         if (Anime._resExists(res)) {
             return;
         }
-        Anime._availableRes.push({'res': res, 'fullRes': fullRes});
+        Anime._availableRes.push({ 'res': res, 'fullRes': fullRes });
     }
-
-    public static removeAvailableResolutions(resToRemove: string | number): void {
-        for (let i: number = 0; i < Anime._availableRes.length; i++) {
-            let currentRes: resType = Anime._availableRes[i];
+    static removeAvailableResolutions(resToRemove) {
+        for (let i = 0; i < Anime._availableRes.length; i++) {
+            let currentRes = Anime._availableRes[i];
             if (currentRes.res === resToRemove || currentRes.fullRes === resToRemove) {
                 Anime._availableRes.splice(i, 1);
             }
         }
     }
-
-    private static _resExists(_res: string | number): boolean {
-        for (let i: number = 0; i < Anime._availableRes.length; i++) {
-            let currentRes: resType = Anime._availableRes[i];
+    static _resExists(_res) {
+        for (let i = 0; i < Anime._availableRes.length; i++) {
+            let currentRes = Anime._availableRes[i];
             if (currentRes.res === _res || currentRes.fullRes === _res) {
                 return true;
             }
         }
         return false;
     }
-
-    public static getTdFromTable(table: JQuery<HTMLElement>, index: number): JQuery<HTMLElement> {
+    static getTdFromTable(table, index) {
         return table.find('td:nth-child(' + index + ')');
     }
-
-    public static avgSeedsForRes(res: number, skipSeedLimit: boolean): number {
-        let seedCount: number = 0;
-        let epCount: number = Anime.getAmountOfEpsFromRes(res, skipSeedLimit);
+    static avgSeedsForRes(res, skipSeedLimit) {
+        let seedCount = 0;
+        let epCount = Anime.getAmountOfEpsFromRes(res, skipSeedLimit);
         if (epCount === 0) {
             return 0;
         }
-        let eps: Array<Episode> = super.abstractGetEps(skipSeedLimit);
-        for (let i: number = 0, len: number = eps.length; i < len; i++) {
-            let currentEp: Episode = eps[i];
+        let eps = super.abstractGetEps(skipSeedLimit);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let currentEp = eps[i];
             if (currentEp.res === res) {
                 seedCount += currentEp.res;
             }
         }
         return Math.round(seedCount / epCount);
     }
-
-    public static avgPeersForRes(res: number, skipSeedLimit: boolean): number {
-        let leechCount: number = 0;
-        let epCount: number = Anime.getAmountOfEpsFromRes(res, skipSeedLimit);
+    static avgPeersForRes(res, skipSeedLimit) {
+        let leechCount = 0;
+        let epCount = Anime.getAmountOfEpsFromRes(res, skipSeedLimit);
         if (epCount === 0) {
             return 0;
         }
-        let eps: Array<Episode> = super.abstractGetEps(skipSeedLimit);
-        for (let i: number = 0, len: number = eps.length; i < len; i++) {
-            let currentEp: Episode = eps[i];
+        let eps = super.abstractGetEps(skipSeedLimit);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let currentEp = eps[i];
             if (currentEp.res === res) {
                 leechCount += currentEp.leechers;
             }
         }
         return Math.round(leechCount / epCount);
     }
-
-    public static getTotalSizeForRes(res: number, skipSeedLimit: boolean, decimals: number = 3): string {
-        let eps: Array<Episode> = Anime.getEpsForRes(res, skipSeedLimit);
+    static getTotalSizeForRes(res, skipSeedLimit, decimals = 3) {
+        let eps = Anime.getEpsForRes(res, skipSeedLimit);
         return Utils.getHumanReadableSize(eps, decimals);
     }
-
-    public static getAmountOfEpsFromRes(res: number, skipSeedLimit: boolean): number {
+    static getAmountOfEpsFromRes(res, skipSeedLimit) {
         return Anime.getEpsForRes(res, skipSeedLimit).length;
     }
-
-    public static getEpsForRes(res: number, skipSeedLimit: boolean): Array<Episode> {
-        let arrayOfEps: Array<Episode> = [];
-        let eps: Array<Episode> = super.abstractGetEps(skipSeedLimit);
-        for (let i: number = 0, len: number = eps.length; i < len; i++) {
-            let currentEp: Episode = eps[i];
+    static getEpsForRes(res, skipSeedLimit) {
+        let arrayOfEps = [];
+        let eps = super.abstractGetEps(skipSeedLimit);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let currentEp = eps[i];
             if (currentEp.res === res) {
                 arrayOfEps.push(currentEp);
             }
         }
         return arrayOfEps;
     }
-
-    public static isValidRes(res: number): boolean {
+    static isValidRes(res) {
         return Anime._resExists(res);
     }
-
-    public static addAllEps(eps: Array<Episode>): void {
-        for (let i: number = 0; i < eps.length; i++) {
+    static addAllEps(eps) {
+        for (let i = 0; i < eps.length; i++) {
             super.addEp(eps[i]);
         }
     }
-
-    public static getUidFromJqueryObject(obj: JQuery<HTMLElement>): string {
+    static getUidFromJqueryObject(obj) {
         if (obj.is('tr')) {
             return (function () {
-                let currectTd: JQuery<HTMLElement> = Anime.getNameTr(obj);
-                let tableRows: JQuery<HTMLElement> = currectTd.find('a:not(a.comments)');
+                let currectTd = Anime.getNameTr(obj);
+                let tableRows = currectTd.find('a:not(a.comments)');
                 if (tableRows.length > 1) {
                     throw 'Object must be unique';
                 }
@@ -273,53 +200,49 @@ class Anime extends _AbstractEps {
         }
         return null;
     }
-
-    private static getNameTr(obj: JQuery<HTMLElement>): JQuery<HTMLElement> {
+    static getNameTr(obj) {
         return obj.find('td:nth-child(2)');
     }
-
-    public static getEpisodeFromAnchor(anchor: HTMLAnchorElement | JQuery<HTMLElement> | string): Episode {
-        let link: HTMLAnchorElement = (function () {
+    static getEpisodeFromAnchor(anchor) {
+        let link = (function () {
             if (Utils.isjQueryObject(anchor)) {
-                return <HTMLAnchorElement>(<JQuery<HTMLElement>>anchor).get(0);
+                return anchor.get(0);
             }
-            return <HTMLAnchorElement>anchor;
+            return anchor;
         }());
-        let uid: string = Anime._getUidFromAnchor(link);
+        let uid = Anime._getUidFromAnchor(link);
         return Anime.getEpisodeFromUid(uid, true);
     }
-
-    public static getEpisodeFromUid(uid: string, skipSeedLimit: boolean): Episode {
-        let eps: Array<Episode> = super.abstractGetEps(skipSeedLimit);
-        for (let i: number = 0, len = eps.length; i < len; i++) {
-            let currentEp: Episode = eps[i];
+    static getEpisodeFromUid(uid, skipSeedLimit) {
+        let eps = super.abstractGetEps(skipSeedLimit);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let currentEp = eps[i];
             if (currentEp.uid === uid) {
                 return currentEp;
             }
         }
         return null;
     }
-
-    private static _getUidFromAnchor(anchor: string | JQuery<HTMLElement> | HTMLElement): string {
+    static _getUidFromAnchor(anchor) {
         if (typeof anchor === 'string') {
             if (anchor.indexOf(".torrent") > -1) {
                 return anchor.replace(".torrent", "").split("/").pop();
             }
             return anchor.split("/").pop();
         }
-        return (<HTMLAnchorElement>anchor).href.split("/").pop();
+        return anchor.href.split("/").pop();
     }
-
-    public static getEpisodesFromResidence(resides: number, exclude: boolean, skipSeedLimit: boolean): Array<Episode> {
-        let arrayOfEps: Array<Episode> = [];
-        let eps: Array<Episode> = super.abstractGetEps(skipSeedLimit);
-        for (let i: number = 0, len: number = eps.length; i < len; i++) {
-            let currentEp: Episode = eps[i];
+    static getEpisodesFromResidence(resides, exclude, skipSeedLimit) {
+        let arrayOfEps = [];
+        let eps = super.abstractGetEps(skipSeedLimit);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let currentEp = eps[i];
             if (exclude === true) {
                 if (currentEp.resides !== resides) {
                     arrayOfEps.push(currentEp);
                 }
-            } else {
+            }
+            else {
                 if (currentEp.resides === resides) {
                     arrayOfEps.push(currentEp);
                 }
@@ -327,117 +250,113 @@ class Anime extends _AbstractEps {
         }
         return arrayOfEps;
     }
-
-    public static getPageUrls(): Array<string> {
-        function range(start: number, end: number): Array<number> {
+    static getPageUrls() {
+        function range(start, end) {
             // @ts-ignore
             return Array(end - start + 1).fill().map((_, idx) => start + idx);
         }
-
-        let pages: JQuery<HTMLElement> = $(".center > ul.pagination a");
+        let pages = $(".center > ul.pagination a");
         if (pages.length === 0) {
             return [];
         }
         let firstPage = Utils.getElementFromJqueryArray(pages, 1);
         let lastPage = Utils.getElementFromJqueryArray(pages, pages.length - 2);
-        let firstPageNumber: number = Number.parseInt(firstPage.text());
-        let lastPageNumber: number = Number.parseInt(lastPage.text());
-        let rangeBetween: Array<number> = range(firstPageNumber, lastPageNumber);
-        let baseUrl: string = window.location.href;
-        let urls: Array<string> = [];
-        let currentPage: string = QueryString.p === undefined ? 1 : QueryString.p;
-        for (let i: number = 0; i < rangeBetween.length; i++) {
-            let num: string = String(rangeBetween[i]);
+        let firstPageNumber = Number.parseInt(firstPage.text());
+        let lastPageNumber = Number.parseInt(lastPage.text());
+        let rangeBetween = range(firstPageNumber, lastPageNumber);
+        let baseUrl = window.location.href;
+        let urls = [];
+        let currentPage = QueryString.p === undefined ? 1 : QueryString.p;
+        for (let i = 0; i < rangeBetween.length; i++) {
+            let num = String(rangeBetween[i]);
             if (num == currentPage) {
                 continue;
             }
-            let newUrl: string = Utils.addParameter(baseUrl, "p", num.toString());
+            let newUrl = Utils.addParameter(baseUrl, "p", num.toString());
             urls.push(newUrl);
         }
         return urls;
     }
-
-    public static removeEpisodesFromUid(uid: string): void {
+    static removeEpisodesFromUid(uid) {
         let episode = Anime.getEpisodeFromUid(uid, true);
         super.removeEpisodeFromAnime(episode);
     }
-
-    public static removeEpisodesFromResidence(resides: number, exclude: boolean): void {
-        let eps: Array<Episode> = Anime.getEpisodesFromResidence(resides, exclude, true);
-        for (let i: number = 0, len: number = eps.length; i < len; i++) {
-            let currentEp: Episode = eps[i];
+    static removeEpisodesFromResidence(resides, exclude) {
+        let eps = Anime.getEpisodesFromResidence(resides, exclude, true);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let currentEp = eps[i];
             this.removeEpisodeFromAnime(currentEp);
         }
     }
-
-    public static getAmountOfEps(): number {
+    static getAmountOfEps() {
         return super.abstractGetEps(true).length;
     }
-
-    public static getEpisodeFromUrl(url:string):Episode {
-        let eps:Array<Episode> = super.abstractGetEps(true);
-        for (let i:number = 0, len:number = eps.length; i < len; i++)  {
-            let ep:Episode = eps[i];
-            if(ep.downloadLink === url){
+    static getEpisodeFromUrl(url) {
+        let eps = super.abstractGetEps(true);
+        for (let i = 0, len = eps.length; i < len; i++) {
+            let ep = eps[i];
+            if (ep.downloadLink === url) {
                 return ep;
             }
         }
         return null;
     }
 }
-
+Anime._availableRes = [];
+Anime._supportedRes = [{ "res": 1080, "fullRes": "1920x1080" }, {
+        "res": 720,
+        "fullRes": "1280x720"
+    }, { "res": 480, "fullRes": "640x480" }, { "res": 360, "fullRes": "640x360" }];
 class Utils {
-    private constructor() {
+    constructor() {
     }
-
-    public static downloadViaJavaScript(url: string, data: any, callBack: (downloadFunc:Function) => void, _type: string = "POST", fileName:string = null): void {
-        let xhr: XMLHttpRequest = new XMLHttpRequest();
+    static downloadViaJavaScript(url, data, callBack, _type = "POST", fileName = null) {
+        let xhr = new XMLHttpRequest();
         xhr.open(_type, url, true);
         xhr.responseType = "blob";
         xhr.withCredentials = true;
-
         if (_type == "POST") {
             xhr.setRequestHeader("Content-type", "application/json");
         }
-        let hasError: boolean = false;
-        let mediaType: string = null;
+        let hasError = false;
+        let mediaType = null;
         xhr.onreadystatechange = function () {
-            let error: string = null;
+            let error = null;
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (hasError) {
                     if (xhr.response != null && xhr.response.length > 0) {
                         error = xhr.response;
-                    } else {
+                    }
+                    else {
                         error = "internal server error";
                     }
                 }
-                let contentDispositionHeader:string = xhr.getResponseHeader("Content-Disposition");
+                let contentDispositionHeader = xhr.getResponseHeader("Content-Disposition");
                 if (fileName == null && contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
                     fileName = contentDispositionHeader.split("filename").pop();
                     fileName = fileName.replace("=", "");
                     fileName = fileName.trim();
                     fileName = fileName.replace(/"/g, "");
                 }
-
-                let mediaTypeHeader: string = xhr.getResponseHeader("Content-Type");
+                let mediaTypeHeader = xhr.getResponseHeader("Content-Type");
                 if (mediaTypeHeader != null) {
                     mediaType = mediaTypeHeader;
-                } else {
+                }
+                else {
                     mediaType = "application/octet-stream";
                 }
-
-                let blob: Blob = xhr.response;
-
-                let returnFunction = function save(blob: Blob, fileName: string, hasError: boolean, error: string) {
+                let blob = xhr.response;
+                /*let returnFunction = function save() {
                     if (hasError) {
                         let error:string = "Unable to download file: '" +fileName+ "' Please download this file manually";
                         alert(error);
                         return;
                     }
-                    saveAs(blob, fileName, true);
-                }.bind(this, blob, fileName, hasError, error);
-                callBack.call(this, returnFunction);
-            } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+                }.bind(this, );*/
+                let saveAsFunc = saveAs.bind(blob, fileName, true);
+                callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
+            }
+            else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
                 if (xhr.status !== 200) {
                     xhr.responseType = "text";
                     hasError = true;
@@ -446,68 +365,69 @@ class Utils {
         };
         if (_type === "POST") {
             xhr.send(JSON.stringify(data));
-        } else {
+        }
+        else {
             xhr.send();
         }
-    };
-
-    public static sortSelect(selElem: HTMLSelectElement): void {
-        let tmpAry: Array<any> = [];
-        for (let i: number = 0, length: number = selElem.options.length; i < length; i++) {
+    }
+    ;
+    static sortSelect(selElem) {
+        let tmpAry = [];
+        for (let i = 0, length = selElem.options.length; i < length; i++) {
             tmpAry[i] = [];
             tmpAry[i][0] = selElem.options[i].text;
             tmpAry[i][1] = selElem.options[i].dataset.url;
         }
-        tmpAry.sort(function (a: HTMLElement, b: HTMLElement) {
+        tmpAry.sort(function (a, b) {
             // @ts-ignore
             return a[0].toUpperCase().localeCompare(b[0].toUpperCase());
         });
         selElem.innerHTML = "";
-        for (let i: number = 0, len: number = tmpAry.length; i < len; i++) {
-            let op: HTMLOptionElement = new Option(tmpAry[i][0]);
+        for (let i = 0, len = tmpAry.length; i < len; i++) {
+            let op = new Option(tmpAry[i][0]);
             op.dataset.url = tmpAry[i][1];
             selElem.options[i] = op;
         }
     }
-
-    public static injectCss(css: string): void {
-        function _isUrl(url: string): boolean {
-            let matcher: RegExp = new RegExp(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/);
+    static injectCss(css) {
+        function _isUrl(url) {
+            let matcher = new RegExp(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/);
             return matcher.test(url);
         }
-
         if (_isUrl(css)) {
             $("<link>").prop({
                 "type": "text/css",
                 "rel": "stylesheet"
             }).attr("href", css).appendTo("head");
-        } else {
+        }
+        else {
             $("<style>").prop("type", "text/css").html(css).appendTo("head");
         }
     }
-
-    public static addParameter(url: string, parameterName: string, parameterValue: string, atStart: boolean = false): string {
-        let replaceDuplicates: boolean = true;
-        let urlhash: string;
+    static addParameter(url, parameterName, parameterValue, atStart = false) {
+        let replaceDuplicates = true;
+        let urlhash;
         let cl;
         if (url.indexOf('#') > 0) {
             cl = url.indexOf('#');
             urlhash = url.substring(url.indexOf('#'), url.length);
-        } else {
+        }
+        else {
             urlhash = '';
             cl = url.length;
         }
-        let sourceUrl: string = url.substring(0, cl);
-        let urlParts: string[] = sourceUrl.split("?");
-        let newQueryString: string = "";
+        let sourceUrl = url.substring(0, cl);
+        let urlParts = sourceUrl.split("?");
+        let newQueryString = "";
         if (urlParts.length > 1) {
-            let parameters: string[] = urlParts[1].split("&");
-            for (let i: number = 0; (i < parameters.length); i++) {
-                let parameterParts: string[] = parameters[i].split("=");
+            let parameters = urlParts[1].split("&");
+            for (let i = 0; (i < parameters.length); i++) {
+                let parameterParts = parameters[i].split("=");
                 if (!(replaceDuplicates && parameterParts[0] == parameterName)) {
                     if (newQueryString == "") {
                         newQueryString = "?";
-                    } else {
+                    }
+                    else {
                         newQueryString += "&";
                     }
                     newQueryString += parameterParts[0] + "=" + (parameterParts[1] ? parameterParts[1] : '');
@@ -519,89 +439,114 @@ class Utils {
         }
         if (atStart) {
             newQueryString = '?' + parameterName + "=" + parameterValue + (newQueryString.length > 1 ? '&' + newQueryString.substring(1) : '');
-        } else {
+        }
+        else {
             if (newQueryString !== "" && newQueryString != '?')
                 newQueryString += "&";
             newQueryString += parameterName + "=" + (parameterValue ? parameterValue : '');
         }
         return urlParts[0] + newQueryString + urlhash;
     }
-
-    public static getElementFromJqueryArray(elm: JQuery<HTMLElement>, index: number): JQuery<HTMLElement> {
+    static getElementFromJqueryArray(elm, index) {
         return elm.filter(function (i) {
             return i === index;
         });
-    };
-
-
-    public static getTable(): JQuery<HTMLTableElement> {
+    }
+    ;
+    static getTable() {
         return $('table');
     }
-
-    public static getQueryFromUrl(url: string): any {
-        return url.split("&").reduce(function (prev: any, curr: any, i, arr) {
-            let p: any = curr.split("=");
+    static getQueryFromUrl(url) {
+        return url.split("&").reduce(function (prev, curr, i, arr) {
+            let p = curr.split("=");
             prev[decodeURIComponent(p[0])] = decodeURIComponent(p[1]);
             return prev;
         }, {});
     }
-
-    public static isjQueryObject(obj: Object): boolean {
+    static isjQueryObject(obj) {
         return obj instanceof jQuery || 'jquery' in Object(obj);
     }
-
-    public static disableButton(button: JQuery<HTMLButtonElement>): void {
+    static disableButton(button) {
         button.prop('disabled', true);
     }
-
-    public static enableButton(button: JQuery<HTMLButtonElement>): void {
+    static enableButton(button) {
         button.prop('disabled', false);
     }
-
     // @ts-ignore
-    public static doDownloads(event: Event<HTMLElement, null>): void {
+    static doDownloads(event) {
         $('#crossPage').prop('disabled', true);
-        let type: string = $(event.target).data('type');
-        let html: string = UI.builDownloadAlert(type);
-        let urlsToDownload: Array<string> = [];
+        let type = $(event.target).data('type');
+        let html = UI.builDownloadAlert(type);
+        let urlsToDownload = [];
         $('#alertUser').html(html).slideDown("slow").show();
         if (type === 'downloadSelected') {
             $.each($('.checkboxes:checked').prev('a'), function () {
-                let ep: Episode = Anime.getEpisodeFromAnchor(<HTMLAnchorElement>this);
+                let ep = Anime.getEpisodeFromAnchor(this);
                 urlsToDownload.push(ep.downloadLink);
             });
-        } else if (type === 'downloadSelects') {
+        }
+        else if (type === 'downloadSelects') {
             $.each($('#animeSelection option:selected'), function () {
-                let url: string = this.dataset.url;
+                let url = this.dataset.url;
                 urlsToDownload.push(url);
             });
-        } else {
-            let eps: Array<Episode> = Anime.getEpsForRes(parseInt(<string>$('#downloadRes').val()), false);
+        }
+        else {
+            let eps = Anime.getEpsForRes(parseInt($('#downloadRes').val()), false);
             for (let i = 0, len = eps.length; i < len; i++) {
                 urlsToDownload.push(eps[i].downloadLink);
             }
         }
         bindAlertControls();
-
-        function bindAlertControls(): void {
+        function bindAlertControls() {
             $('#alertButtonCancel').on('click', function () {
                 $('#alertUser').slideUp('slow');
                 $('#crossPage').prop('disabled', false);
             });
             $('#alertButton').on('click', function () {
-                doIt(urlsToDownload);
+                doIt(urlsToDownload, false);
+            });
+            $("#downloadZip").on("click", function () {
+                doIt(urlsToDownload, true);
             });
         }
-
-        function doIt(urls: Array<string>) {
-            let timerOffset:number = 0;
-            for (let i: number = 0; i < urls.length; i++) {
-                let currentUrl: string = urls[i];
-                let ep:Episode = Anime.getEpisodeFromUrl(currentUrl);
-                setTimeout(()=>{
-                    Utils.downloadViaJavaScript(currentUrl, undefined ,(downloadFunc) =>{
-                        downloadFunc();
-                    }, "GET", ep.title.replace(/ /g,"_")+".torrent");
+        function doIt(urls, asZip) {
+            let ajaxPromiseMap = new Map();
+            let arrayd = [];
+            for (let i = 0; i < urls.length; i++) {
+                let d = $.Deferred();
+                ajaxPromiseMap.set(urls[i], d);
+                arrayd.push(d);
+            }
+            $.when.apply($, arrayd).done(function () {
+                if (!asZip) {
+                    return;
+                }
+                // @ts-ignore
+                let zip = new JSZip();
+                for (let i = 0; i < arguments.length; i++) {
+                    let arg = arguments[i];
+                    let blob = arg[0];
+                    let fileName = arg[1];
+                    zip.file(fileName, blob);
+                }
+                zip.generateAsync({ type: "blob" }).then(function (blob) {
+                    saveAs(blob, Anime.currentAnime + ".zip");
+                }, function (err) {
+                    alert(err);
+                });
+            });
+            let timerOffset = 0;
+            for (let [currentUrl, deferr] of ajaxPromiseMap) {
+                let ep = Anime.getEpisodeFromUrl(currentUrl);
+                let fileName = ep.title.replace(/ /g, "_") + ".torrent";
+                setTimeout(() => {
+                    Utils.downloadViaJavaScript(currentUrl, undefined, (blob, fileName, hasError, error, saveFunc) => {
+                        deferr.resolve(blob, fileName);
+                        if (!asZip) {
+                            saveFunc();
+                        }
+                    }, "GET", fileName);
                 }, timerOffset);
                 timerOffset += 350;
             }
@@ -609,100 +554,91 @@ class Utils {
             $('#crossPage').prop('disabled', false);
         }
     }
-
-    public static checkBoxValid(checkbox: JQuery<HTMLInputElement>): boolean {
+    static checkBoxValid(checkbox) {
         return checkbox.is(':checked');
     }
-
-    private static _minSeedsSet(): boolean {
-        let seeds: string = Localstore.getMinSeedsFromStore();
+    static _minSeedsSet() {
+        let seeds = Localstore.getMinSeedsFromStore();
         if (seeds !== null && seeds.length > 0) {
             return Number.parseInt(seeds) !== 1;
         }
         return false;
     }
-
-    public static getCurrentPageOffset(): number {
+    static getCurrentPageOffset() {
         return parseInt((typeof QueryString.p === 'undefined') ? 1 : QueryString.p);
     }
-
-    public static arrayCopy<T>(array: Array<T>, deep: boolean = false): Array<T> {
+    static arrayCopy(array, deep = false) {
         return $.extend(deep, [], array);
     }
-
-    public static cleanAvailableResolutions(): void {
-        let avRes: Array<resType> = Utils.arrayCopy(Anime.availableRes, true);
-        for (let i: number = 0, len: number = avRes.length; i < len; i++) {
-            let currentRes: number = avRes[i].res;
+    static cleanAvailableResolutions() {
+        let avRes = Utils.arrayCopy(Anime.availableRes, true);
+        for (let i = 0, len = avRes.length; i < len; i++) {
+            let currentRes = avRes[i].res;
             if (Anime.getAmountOfEpsFromRes(currentRes, true) === 0) {
                 Anime.removeAvailableResolutions(currentRes);
             }
         }
     }
-
-    public static sortAllControls(): void {
-        Utils.sortSelect(<HTMLSelectElement>document.getElementById('animeSelection'));
-        Utils.sortSelect(<HTMLSelectElement>document.getElementById('downloadRes'));
+    static sortAllControls() {
+        Utils.sortSelect(document.getElementById('animeSelection'));
+        Utils.sortSelect(document.getElementById('downloadRes'));
         // @ts-ignore
         $('#info').sortTable(0);
     }
-
-    public static reBindSelectFilters(): void {
+    static reBindSelectFilters() {
         // @ts-ignore
         $('input[name=\'filterSelect\']').offOn('change', handleSelect);
-
         // @ts-ignore
         $('#clearResOptions').offOn('click', handleSelect);
-
         // @ts-ignore
         $("#animeSelection").offOn("click", function () {
             UI.autoEnableAcceptSelect();
         });
         // @ts-ignore
-        $("#selectAllFromControl").offOn("click", function (this: HTMLAnchorElement) {
+        $("#selectAllFromControl").offOn("click", function () {
             let allSelected = $("#animeSelection option:selected").length === $("#animeSelection option").length;
             if (allSelected) {
                 $(this).text("Select all");
                 $("#animeSelection option").prop("selected", false);
-            } else {
+            }
+            else {
                 $(this).text("deselect all");
                 $("#animeSelection option").prop("selected", true);
             }
             UI.autoEnableAcceptSelect();
         });
-
-        function handleSelect(event: Event): void {
-            let resTOFilter: string = $(event.target).data('set');
+        function handleSelect(event) {
+            let resTOFilter = $(event.target).data('set');
             $('#selectAnime').html(UI.buildSelect(resTOFilter));
             Utils.sortAllControls();
-            let searchApplied: string = UI.getAppliedSearch();
+            let searchApplied = UI.getAppliedSearch();
             if (searchApplied !== '') {
                 UI.applySearch(searchApplied);
             }
             Utils.reBindSelectFilters();
         }
     }
-
-    public static getHumanReadableSize(from: unknown, decimals: number = 3): string {
-        let bits: number = 0;
+    static getHumanReadableSize(from, decimals = 3) {
+        let bits = 0;
         if (Array.isArray(from)) {
-            for (let i: number = 0; i < from.length; i++) {
-                let ep: Episode = from[i];
+            for (let i = 0; i < from.length; i++) {
+                let ep = from[i];
                 bits += ep.size;
             }
-        } else if (typeof from === 'number') {
-            bits = from;
-        } else {
-            bits += (<Episode>from).size;
         }
-
-        function formatBytes(bytes: number, decimals: number): string {
+        else if (typeof from === 'number') {
+            bits = from;
+        }
+        else {
+            bits += from.size;
+        }
+        function formatBytes(bytes, decimals) {
             if (bytes == 0) {
                 return '0 Byte';
             }
-            let k: number = 1024;
-            let dm: number = decimals + 1 || 3;
-            let sizes: Array<string> = [
+            let k = 1024;
+            let dm = decimals + 1 || 3;
+            let sizes = [
                 'Bytes',
                 'KB',
                 'MB',
@@ -713,23 +649,17 @@ class Utils {
                 'ZB',
                 'YB'
             ];
-            let i: number = Math.floor(Math.log(bytes) / Math.log(k));
+            let i = Math.floor(Math.log(bytes) / Math.log(k));
             return (bytes / Math.pow(k, i)).toPrecision(dm) + ' ' + sizes[i];
         }
-
         return formatBytes(bits, decimals);
     }
 }
-
 class UI {
-    private constructor() {
+    constructor() {
     }
-
-    private static epsInSelect: Array<Episode> = [];
-    private static searchApplied: string = '';
-
-    public static buildTable(): string {
-        let html: string = '';
+    static buildTable() {
+        let html = '';
         html += '<table class="table table-bordered table-hover table-striped torrent-list" style=\'width: 100%\' id=\'info\'>';
         html += '<caption>Download infomation</caption>';
         html += '<thead>';
@@ -742,10 +672,10 @@ class UI {
         html += '</tr>';
         html += '</thead>';
         html += '<tbody>';
-        let allRes: Array<resType> = Anime.availableRes;
-        for (let i: number = 0; i < allRes.length; i++) {
-            let currRes: resType = allRes[i];
-            let localRes: number = currRes.res;
+        let allRes = Anime.availableRes;
+        for (let i = 0; i < allRes.length; i++) {
+            let currRes = allRes[i];
+            let localRes = currRes.res;
             html += '<tr>';
             html += '<td>' + (localRes === -1 ? 'Others' : localRes + 'p') + '</td>';
             html += '<td>' + Anime.getAmountOfEpsFromRes(localRes, true) + '</td>';
@@ -758,56 +688,57 @@ class UI {
         html += '</table>';
         return html;
     }
-
-    public static stateChangeAcceptSelect(state: boolean): void {
+    static stateChangeAcceptSelect(state) {
         // @ts-ignore
         $("#acceptSelect").enableButton(state);
     }
-
-    public static autoEnableAcceptSelect(): void {
-        let selection: JQuery<HTMLElement> = $("#animeSelection option:selected");
+    static autoEnableAcceptSelect() {
+        let selection = $("#animeSelection option:selected");
         UI.stateChangeAcceptSelect(selection.length > 0);
     }
-
-    public static buildDropdownSelections(): string {
-        let html: string = '';
+    static buildDropdownSelections() {
+        let html = '';
         html += '<select class="form-control" style="margin-right:5px;display: inline;width: auto;" id="downloadRes">';
-        let allRes: Array<resType> = Anime.availableRes;
-        for (let i: number = 0; i < allRes.length; i++) {
-            let currRes: resType = allRes[i];
-            let localRes: number = currRes.res;
+        let allRes = Anime.availableRes;
+        for (let i = 0; i < allRes.length; i++) {
+            let currRes = allRes[i];
+            let localRes = currRes.res;
             html += '<option value=' + localRes + '>' + (localRes === -1 ? 'Others' : localRes + 'p') + '</option>';
         }
         html += '</select>';
         return html;
     }
-
-    public static builDownloadAlert(type: string): string {
-        let amountOfAnime: number = 0;
-        let selectedRes: number = Number.parseInt((<string>$('#downloadRes').val()));
-        let res: string = null;
-        let totalSize: string = null;
+    static builDownloadAlert(type) {
+        let amountOfAnime = 0;
+        let selectedRes = Number.parseInt($('#downloadRes').val());
+        let res = null;
+        let totalSize = null;
         if (type === 'downloadSelected') {
             amountOfAnime = $('.checkboxes:checked').length;
             res = 'custom';
-        } else if (type === 'downloadSelects') {
+        }
+        else if (type === 'downloadSelects') {
             amountOfAnime = $('#animeSelection option:selected').length;
             totalSize = Utils.getHumanReadableSize((function () {
-                let localSize: number = 0;
+                let localSize = 0;
                 $('#animeSelection option:selected').each(function () {
-                    let url: string = this.dataset.url;
+                    let url = this.dataset.url;
                     localSize += Anime.getEpisodeFromAnchor(url).size;
                 });
                 return localSize;
             }()));
             res = 'custom';
-        } else {
+        }
+        else {
             amountOfAnime = Anime.getAmountOfEpsFromRes(selectedRes, false);
             res = selectedRes === -1 ? 'Others' : selectedRes + 'p';
             totalSize = Anime.getTotalSizeForRes(parseInt(res), false);
         }
-        let seedLimit: string = Localstore.getMinSeedsFromStore();
-        let html: string = '';
+        let seedLimit = Localstore.getMinSeedsFromStore();
+        if (seedLimit === "-1") {
+            seedLimit = "none";
+        }
+        let html = '';
         html += '<div class=\'alert alert-success\'>';
         html += '<div><strong>Download: ' + res + '</strong></div> <br />';
         html += '<div><strong>Seed Limit: ' + seedLimit + '</strong></div>';
@@ -817,19 +748,21 @@ class UI {
         html += '<p>You are about to download ' + amountOfAnime + ' ep(s)</p>';
         html += '<p>This will cause ' + amountOfAnime + ' download pop-up(s) Are you sure you want to continue?</p>';
         html += '<p>If there are a lot of eps, your browser might stop responding for a while. This is normal. If you are on Google Chrome, it will ask you to allow multiple-downloads</p>';
-        html += '<button type="button" class="btn btn-success" id=\'alertButton\'>Okay</button>';
-        html += '<button type="button" class="btn btn-warning" id=\'alertButtonCancel\'>Cancel</button>';
+        html += '<button type="button" class="btn btn-warning downloadButton" id=\'alertButtonCancel\'>Cancel</button>';
+        html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
+        html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
+        html += "<div class='hidden' id='loadingContainer'>";
+        html += "</div>";
         html += '</div>';
         return html;
     }
-
-    public static showAjaxErrorAlert(ajaxInfo: ajaxInfo): string {
-        let parseError: JQuery<HTMLElement> = $('#parseErrors');
+    static showAjaxErrorAlert(ajaxInfo) {
+        let parseError = $('#parseErrors');
         if (!parseError.is(':hidden')) {
             return null;
         }
         parseError.html('');
-        let html: string = '';
+        let html = '';
         html += '<div class=\'alert alert-danger\'>';
         html += '<p>There was an error in getting the information from page: \'' + ajaxInfo.error.pageAtError + '\'</p>';
         html += '<p>The last successful page parsed was page number ' + (ajaxInfo.currentPage === null ? 1 : ajaxInfo.currentPage) + ' </p>';
@@ -843,37 +776,37 @@ class UI {
             });
         });
     }
-
-    public static buildSelect(resTOFilter: string | number = "none"): string {
-        let html: string = '';
+    static buildSelect(resTOFilter = "none") {
+        let html = '';
         UI.epsInSelect = [];
-        let minSeeds: number = Number.parseInt(Localstore.getMinSeedsFromStore());
+        let minSeeds = Number.parseInt(Localstore.getMinSeedsFromStore());
         html += '<div id=\'selectWrapper\'>';
         html += '<div id=\'selectContainer\'>';
         html += '<p>Or you can select episodes here:</p>';
         html += '<p>Seed limit: ' + (minSeeds === -1 ? 'None' : minSeeds) + '</p>';
         html += '<select class="form-control" id=\'animeSelection\' multiple size=\'20\'>';
-        let allRes: Array<resType> = Anime.availableRes;
-        for (let i: number = 0; i < allRes.length; i++) {
-            let currRes: resType = allRes[i];
-            let localRes: number = currRes.res;
-            let eps: Array<Episode> = Anime.getEpsForRes(localRes, false);
-            for (let j: number = 0, len: number = eps.length; j < len; j++) {
-                let currentEp: Episode = eps[j];
+        let allRes = Anime.availableRes;
+        for (let i = 0; i < allRes.length; i++) {
+            let currRes = allRes[i];
+            let localRes = currRes.res;
+            let eps = Anime.getEpsForRes(localRes, false);
+            for (let j = 0, len = eps.length; j < len; j++) {
+                let currentEp = eps[j];
                 if (resTOFilter == 'none' || currentEp.res == resTOFilter) {
                     html += '<option data-url=\'' + currentEp.downloadLink + '\'>';
                     html += currentEp.title + ' - Seeders: ' + currentEp.seeds;
                     UI.epsInSelect.push(currentEp);
                     html += '</option>';
-                } else {
+                }
+                else {
                     break;
                 }
             }
         }
         html += '</select>';
         html += '<span>Filter select control: </span>';
-        let checked: boolean = false;
-        for (let i: number = 0; i < allRes.length; i++) {
+        let checked = false;
+        for (let i = 0; i < allRes.length; i++) {
             if (resTOFilter == allRes[i].res) {
                 checked = true;
             }
@@ -888,76 +821,69 @@ class UI {
         $("#acceptSelect").enableButton(false);
         return html;
     }
-
-    public static applySearch(textToFilter: string): void {
-        let opts: Array<Episode> = UI.epsInSelect;
-        let rxp: RegExp = new RegExp(textToFilter);
-        let optlist: JQuery<HTMLElement> = $('#animeSelection').empty();
-        for (let i: number = 0, len: number = opts.length; i < len; i++) {
-            let ep: Episode = opts[i];
+    static applySearch(textToFilter) {
+        let opts = UI.epsInSelect;
+        let rxp = new RegExp(textToFilter);
+        let optlist = $('#animeSelection').empty();
+        for (let i = 0, len = opts.length; i < len; i++) {
+            let ep = opts[i];
             if (rxp.test(ep.title)) {
                 optlist.append('<option data-url=\'' + ep.downloadLink + '\'>' + ep.title + ' - Seeders: ' + ep.seeds + '</option>');
             }
         }
         UI.searchApplied = textToFilter;
-        Utils.sortSelect(<HTMLSelectElement>document.getElementById("animeSelection"));
+        Utils.sortSelect(document.getElementById("animeSelection"));
         UI.autoEnableAcceptSelect();
     }
-
-    public static getAppliedSearch(): string {
+    static getAppliedSearch() {
         return UI.searchApplied;
     }
-
-    public static getEpsInSelect(): Array<Episode> {
+    static getEpsInSelect() {
         return UI.epsInSelect;
     }
 }
-
+UI.epsInSelect = [];
+UI.searchApplied = '';
 class DataParser {
-    private table: JQuery<HTMLElement> = null;
-
-    public constructor(table: JQuery<HTMLElement>) {
+    constructor(table) {
+        this.table = null;
         this.table = table;
     }
-
-    public parseTable(currentPage: number): Array<Episode> {
-        let trRow: JQuery<HTMLElement> = this.table.find('img[src*=\'/static/img/icons/nyaa/1_2.png\']').closest('tr');
-        let eps: Array<Episode> = [];
+    parseTable(currentPage) {
+        let trRow = this.table.find('img[src*=\'/static/img/icons/nyaa/1_2.png\']').closest('tr');
+        let eps = [];
         $.each($(trRow), function () {
-            let resInfo: resType = parseRes(this);
+            let resInfo = parseRes(this);
             if (resInfo === null) {
                 Anime.addAvailableResolutions(-1, null);
-            } else {
+            }
+            else {
                 Anime.addAvailableResolutions(resInfo.res, resInfo.fullRes);
             }
-            let info: epInfo = getEpisodeInfo(this);
+            let info = getEpisodeInfo(this);
             eps.push(new Episode(typeof resInfo.res === ('undefined') ? -1 : resInfo.res, info.currentDownloadLink, info.seeds, info.leech, info.uid, currentPage, info.title, info.size));
         });
         return eps;
-
-        function parseRes(eventContent: HTMLElement): resType {
-            let supportedRes: Array<resType> = Anime.supportedRes;
-            for (let i: number = 0; i < supportedRes.length; i++) {
-                let currRes: number = supportedRes[i].res;
-                let currFullRes: string = supportedRes[i].fullRes;
+        function parseRes(eventContent) {
+            let supportedRes = Anime.supportedRes;
+            for (let i = 0; i < supportedRes.length; i++) {
+                let currRes = supportedRes[i].res;
+                let currFullRes = supportedRes[i].fullRes;
                 if ($(eventContent).children('td:nth-child(2)').text().indexOf(currRes + 'p') > -1 || $(eventContent).children('td:nth-child(2)').text().indexOf(currFullRes) > -1) {
                     return supportedRes[i];
                 }
             }
         }
-
-        function getEpisodeInfo(eventContent: HTMLElement): epInfo {
+        function getEpisodeInfo(eventContent) {
             let _eventContent = $(eventContent);
-            let currentDownloadLink = (<HTMLAnchorElement> Anime.getTdFromTable(_eventContent, 3).find("a")[0]).href;
-
-            function getTextContent(idx: number): number {
+            let currentDownloadLink = Anime.getTdFromTable(_eventContent, 3).find("a")[0].href;
+            function getTextContent(idx) {
                 return (isNaN(parseInt(Anime.getTdFromTable(_eventContent, idx).text()))) ? 0 : parseInt(Anime.getTdFromTable(_eventContent, idx).text());
             }
-
-            function convertToString(ev: JQuery<HTMLElement>): number {
-                let sizeValue: string = Anime.getTdFromTable(ev, 4).text();
-                let sizeText: string = $.trim(sizeValue.split(' ').pop());
-                let intValue: number = parseInt(sizeValue);
+            function convertToString(ev) {
+                let sizeValue = Anime.getTdFromTable(ev, 4).text();
+                let sizeText = $.trim(sizeValue.split(' ').pop());
+                let intValue = parseInt(sizeValue);
                 switch (sizeText) {
                     case "MiB":
                         return ((Math.pow(2, 20))) * intValue;
@@ -967,12 +893,11 @@ class DataParser {
                         return 0;
                 }
             }
-
-            let seeds: number = getTextContent(6);
-            let leech: number = getTextContent(7);
-            let title: string = Anime.getTdFromTable(_eventContent, 2).text().trim().substring(1).trim();
-            let uid: string = Anime.getUidFromJqueryObject(_eventContent);
-            let size: number = convertToString(_eventContent);
+            let seeds = getTextContent(6);
+            let leech = getTextContent(7);
+            let title = Anime.getTdFromTable(_eventContent, 2).text().trim().substring(1).trim();
+            let uid = Anime.getUidFromJqueryObject(_eventContent);
+            let size = convertToString(_eventContent);
             return {
                 'currentDownloadLink': currentDownloadLink,
                 'seeds': seeds,
@@ -984,82 +909,74 @@ class DataParser {
         }
     }
 }
-
 class Localstore {
-    private constructor() {
+    constructor() {
     }
-
-    public static getMinSeedsFromStore(): string {
-        let lo: string = localStorage.getItem('minSeeds');
+    static getMinSeedsFromStore() {
+        let lo = localStorage.getItem('minSeeds');
         return lo === null ? "-1" : lo;
     }
-
-    public static setMinSeedsFromStore(seeds: number): void {
+    static setMinSeedsFromStore(seeds) {
         localStorage.setItem('minSeeds', seeds.toString());
     }
-
-    public static removeMinSeedsFromStore(): void {
+    static removeMinSeedsFromStore() {
         localStorage.removeItem('minSeeds');
     }
 }
-
-let QueryString: jsonType = (() => {
+let QueryString = (() => {
     if (typeof window == "undefined") {
         return {};
     }
-    let query_string: jsonType = {};
-    let query: string = window.location.search.substring(1);
-    let vars: Array<string> = query.split("&");
-    for (let i: number = 0; i < vars.length; i++) {
-        let pair: Array<string> = vars[i].split("=");
+    let query_string = {};
+    let query = window.location.search.substring(1);
+    let vars = query.split("&");
+    for (let i = 0; i < vars.length; i++) {
+        let pair = vars[i].split("=");
         if (typeof query_string[pair[0]] === "undefined") {
             query_string[pair[0]] = pair[1];
-        } else if (typeof query_string[pair[0]] === "string") {
+        }
+        else if (typeof query_string[pair[0]] === "string") {
             query_string[pair[0]] = [query_string[pair[0]], pair[1]];
-        } else {
+        }
+        else {
             query_string[pair[0]].push(pair[1]);
         }
     }
     return query_string;
 })();
-
 // Download fix for firefox
 HTMLElement.prototype.click = function () {
-    let evt: MouseEvent = this.ownerDocument.createEvent('MouseEvents');
+    let evt = this.ownerDocument.createEvent('MouseEvents');
     evt.initMouseEvent('click', true, true, this.ownerDocument.defaultView, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
     this.dispatchEvent(evt);
 };
-
 class Main {
-    private constructor() {
+    constructor() {
     }
-
-    public static main(): void {
+    static main() {
         Main.setAnimeObj();
         Main.buildUi();
         Main.bindListeners();
     }
-
-    private static setAnimeObj(): void {
+    static setAnimeObj() {
         if (QueryString.q !== '') {
             Anime.currentAnime = decodeURIComponent(QueryString.q).split('+').join(' ');
-        } else {
+        }
+        else {
             Anime.currentAnime = "unknown";
         }
-        let paths: Array<string> = window.location.pathname.split("/");
+        let paths = window.location.pathname.split("/");
         Anime.currentSubber = paths[2];
-        let instance: DataParser = new DataParser(Utils.getTable());
-        let eps: Array<Episode> = instance.parseTable(Utils.getCurrentPageOffset());
+        let instance = new DataParser(Utils.getTable());
+        let eps = instance.parseTable(Utils.getCurrentPageOffset());
         Anime.addAllEps(eps);
     }
-
-    private static buildUi(): void {
+    static buildUi() {
         makeStyles();
         buildPanel();
         afterBuild();
-
-        function makeStyles(): void {
-            let styles: string = '';
+        function makeStyles() {
+            let styles = '';
             styles += '.collapsem{cursor: pointer; position: absolute; right: 4px; top: 2px;}';
             styles += '.panel-success > .panel-heading {position: relative;}';
             styles += '.avgSeeds{floar:left; padding-right:10px; color:#3c763d;}';
@@ -1069,20 +986,21 @@ class Main {
             styles += '.filterLabel{margin-right: 10px;}';
             styles += '.alert {position:relative;}';
             styles += '#alertUser, #parseErrors{margin-top: 15px;}';
-            styles += '#alertButton{position:absolute; bottom:5px; right:5px;}';
-            styles += '#alertButtonCancel{position:absolute; bottom:5px; right: 66px;}';
+            styles += ".downloadButton {position:absolute; bottom:5px;}";
+            styles += '#alertButton{right:78px;}';
+            styles += '#alertButtonCancel{right: 5px;}';
+            styles += '#downloadZip{right: 140px;}';
             styles += '#errorClose{position:absolute; bottom:5px; right: 11px;}';
             styles += '#animeSelection{width: 100%;}';
             styles += '#clearResOptions{margin-left: 10px; margin-right: 10px ;cursor: pointer;}';
             styles += '#selectAllFromControl{cursor: pointer;}';
             styles += '#downloadCustomButton{float:right;}';
-            styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}'
+            styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}';
             Utils.injectCss('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
             Utils.injectCss(styles);
         }
-
-        function buildPanel(): void {
-            let html: string = '';
+        function buildPanel() {
+            let html = '';
             html += '<div class="panel panel-success">';
             html += '<div class="panel-heading">';
             html += '<h3 id="panel-title" class="panel-title"></h3>';
@@ -1092,9 +1010,8 @@ class Main {
             html += '</div>';
             $('.container > .row > h3').after(html);
             buildPanelContent();
-
-            function buildPanelContent(): void {
-                let html: string = '';
+            function buildPanelContent() {
+                let html = '';
                 html += '<div>';
                 $('#panel-title').html('<span> Download "' + Anime.currentAnime + ' (' + Anime.currentSubber + ')"</span>');
                 if (Anime.getAmountOfEps() === 0) {
@@ -1111,23 +1028,18 @@ class Main {
                 html += '<button class="btn btn-default" type=\'button\' id=\'downloadCustomButton\' data-type=\'downloadSelected\' >download your selected items</button>';
                 html += '</div>';
                 html += '<div id=\'options\'>';
-
                 html += '<div class="checkbox">';
-
                 html += "<label>";
                 html += '<input type=\'checkbox\' id=\'crossPage\' /> ';
                 html += "include Cross pages";
                 html += "</label>";
                 html += "</div>";
-
-
                 html += '<div class="input-group">';
                 html += '<input placeholder="Minimum seeders" class="form-control" type=\'number\' min=\'0\' id=\'MinSeeds\' title=\'Any episode that is below this limit will be excluded from the download.\'/>';
                 html += '<span class="input-group-btn">';
                 html += '<button class="btn btn-default" type=\'button\' id=\'SaveMinSeeds\'>Save</button>';
                 html += "</span>";
                 html += "</div>";
-
                 html += '<div id=\'tableInfo\'>';
                 html += UI.buildTable();
                 html += '</div>';
@@ -1135,28 +1047,24 @@ class Main {
                 html += '<div class=\'selectAnime\' id=\'selectAnime\'>';
                 html += UI.buildSelect();
                 html += '</div>';
-                html += '<input class="form-control" type=\'text\' id=\'findEp\' placeholder=\'Search Select (or use regex)\' />';
+                html += '<input class="form-control" type=\'text\' id=\'findEp\' placeholder=\'Search Select (or use regex) \' />';
                 html += '<button class="btn btn-default" disabled id=\'acceptSelect\' data-type=\'downloadSelects\'>Select for download</button>';
                 html += '<div id=\'parseErrors\' class =\'hide\'></div>';
                 $('#pannelContent').html(html);
             }
         }
-
-        function afterBuild(): void {
+        function afterBuild() {
             makeCheckBoxes();
             sortLists();
-
-            function makeCheckBoxes(): void {
+            function makeCheckBoxes() {
                 $('.tlistdownload > a').after('<input class=\'checkboxes\' type=\'checkbox\'/>');
             }
-
-            function sortLists(): void {
+            function sortLists() {
                 Utils.sortAllControls();
             }
         }
     }
-
-    private static bindListeners(): void {
+    static bindListeners() {
         Utils.reBindSelectFilters();
         $('#downloadAll').on('click', function (e) {
             Utils.doDownloads(e);
@@ -1164,16 +1072,14 @@ class Main {
         $('.checkboxes').on('click', function (e) {
             if (Utils.checkBoxValid($('.checkboxes'))) {
                 Utils.enableButton($('#downloadCustomButton'));
-            } else {
+            }
+            else {
                 Utils.disableButton($('#downloadCustomButton'));
             }
         });
-
-
         $('#crossPage').on('click', function (e) {
             preformParsing(Anime.getPageUrls());
-
-            function preformParsing(urls: Array<string>): void {
+            function preformParsing(urls) {
                 if (urls.length === 0) {
                     return;
                 }
@@ -1185,16 +1091,16 @@ class Main {
                     $('#parseErrors').slideUp('fast', function () {
                         $(this).html('');
                     });
-                    let AjaxInfo: ajaxInfo = {
+                    let AjaxInfo = {
                         error: {
                             pageAtError: null
                         },
                         currentPage: null
                     };
-                    let ajaxPromiseMap: Map<string, Deferred<any, any, any>> = new Map();
-                    let arrayd: Array<Deferred<any, any, any>> = [];
-                    for (let i: number = 0; i < urls.length; i++) {
-                        let d: Deferred<any, any, any> = $.Deferred();
+                    let ajaxPromiseMap = new Map();
+                    let arrayd = [];
+                    for (let i = 0; i < urls.length; i++) {
+                        let d = $.Deferred();
                         ajaxPromiseMap.set(urls[i], d);
                         arrayd.push(d);
                     }
@@ -1210,21 +1116,22 @@ class Main {
                         Utils.reBindSelectFilters();
                         $('#crossPage, #downloadAll').prop('disabled', false);
                     });
-                    let timeOut: number = 0;
+                    let timeOut = 0;
                     for (let [cur, deferr] of ajaxPromiseMap) {
-                        let currentPage: number = 0;
-                        let queryObjet: any = Utils.getQueryFromUrl(cur);
+                        let currentPage = 0;
+                        let queryObjet = Utils.getQueryFromUrl(cur);
                         if (queryObjet.p) {
                             currentPage = queryObjet.p;
-                        } else {
+                        }
+                        else {
                             currentPage = 1;
                         }
                         setTimeout(() => {
-                            let ajax: jqXHR<any> = $.ajax(cur);
-                            ajax.done(function (data: string) {
+                            let ajax = $.ajax(cur);
+                            ajax.done(function (data) {
                                 AjaxInfo.currentPage = currentPage;
-                                let table: JQuery<HTMLElement> = $(data).find(("table"));
-                                let parser: DataParser = new DataParser(table);
+                                let table = $(data).find(("table"));
+                                let parser = new DataParser(table);
                                 $('#tableInfo').append('<div>Page ' + currentPage + ' Done </div>');
                                 Anime.addAllEps(parser.parseTable(currentPage));
                             }).fail(function () {
@@ -1236,11 +1143,12 @@ class Main {
                         }, timeOut);
                         timeOut += 300;
                     }
-                } else {
+                }
+                else {
                     // noinspection JSMismatchedCollectionQueryUpdate
-                    let tableInfoElm: JQuery<HTMLElement> = $('#tableInfo');
+                    let tableInfoElm = $('#tableInfo');
                     tableInfoElm.html('<p>Please wait while we re-calculate the Episodes</p>');
-                    let currentPage: number = Utils.getCurrentPageOffset();
+                    let currentPage = Utils.getCurrentPageOffset();
                     Anime.removeEpisodesFromResidence(currentPage, true);
                     Utils.cleanAvailableResolutions();
                     $('#downloadRes').html(UI.buildDropdownSelections());
@@ -1251,32 +1159,32 @@ class Main {
                 }
             }
         });
-
         $('#SaveMinSeeds').on('click', function (e) {
-            if (parseInt(<string>$('#MinSeeds').val()) < 0) {
+            if (parseInt($('#MinSeeds').val()) < 0) {
                 alert('number cannot be negative');
                 return;
             }
-            let value: number;
-            value = <string>$('#MinSeeds').val() === '' ? parseInt("-1") : parseInt(<string>$('#MinSeeds').val());
+            let value;
+            value = $('#MinSeeds').val() === '' ? parseInt("-1") : parseInt($('#MinSeeds').val());
             Localstore.setMinSeedsFromStore(value);
             if (value === -1) {
                 alert('Minimum seeds have been cleared');
-            } else {
+            }
+            else {
                 alert('Minimum seeds now set to: ' + value);
             }
             $('#selectAnime').html(UI.buildSelect());
             Utils.sortAllControls();
             Utils.reBindSelectFilters();
         });
-
         $('#collapseToggle').on('click', function () {
             $('#pannelContent').stop(true, true).slideToggle('slow', function () {
-                let elm: JQuery<HTMLElement> = $('#collapseToggle');
+                let elm = $('#collapseToggle');
                 if ($(this).is(':hidden')) {
                     elm.removeClass('fa-minus').addClass('fa-plus');
                     elm.attr('title', 'Show');
-                } else {
+                }
+                else {
                     elm.addClass('fa-minus').removeClass('fa-plus');
                     elm.attr('title', 'Hide');
                 }
@@ -1286,9 +1194,8 @@ class Main {
             Utils.doDownloads(e);
         });
         $('#findEp').on('keyup', function () {
-            UI.applySearch(<string>$(this).val());
+            UI.applySearch($(this).val());
         });
     }
 }
-
 Main.main();

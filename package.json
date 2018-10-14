@@ -2,7 +2,7 @@
   "name": "autoDownloader",
   "version": "1.0.0",
   "description": "",
-  "main": "AutoDownloader.user.js",
+  "main": "compiled/AutoDownloader.user.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,5 +14,8 @@
     "@types/jquery": "^3.3.13",
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0"
+  },
+  "dependencies": {
+    "@types/jszip": "^3.1.4"
   }
 }
