@@ -525,16 +525,29 @@ class Utils {
                 // @ts-ignore
                 let zip = new JSZip();
                 let errors = [];
-                for (let i = 0; i < arguments.length; i++) {
-                    let arg = arguments[i];
-                    let blob = arg[0];
-                    let fileName = arg[1];
-                    let error = arg[2];
+                if (arrayd.length === 1) {
+                    let blob = arguments[0];
+                    let fileName = arguments[1];
+                    let error = arguments[2];
                     if (error !== null) {
                         errors.push(fileName);
                     }
                     else {
                         zip.file(fileName, blob);
+                    }
+                }
+                else {
+                    for (let i = 0; i < arguments.length; i++) {
+                        let arg = arguments[i];
+                        let blob = arg[0];
+                        let fileName = arg[1];
+                        let error = arg[2];
+                        if (error !== null) {
+                            errors.push(fileName);
+                        }
+                        else {
+                            zip.file(fileName, blob);
+                        }
                     }
                 }
                 if (errors.length > 0) {
@@ -591,6 +604,7 @@ class Utils {
     static checkBoxValid(checkbox) {
         return checkbox.is(':checked');
     }
+    //TODO: check this
     static _minSeedsSet() {
         let seeds = Localstore.getMinSeedsFromStore();
         if (seeds !== null && seeds.length > 0) {
@@ -803,7 +817,6 @@ class UI {
         let html = '';
         html += '<div class=\'alert alert-danger\'>';
         html += '<p>There was an error in getting the information from page: \'' + ajaxInfo.error.pageAtError + '\'</p>';
-        html += '<p>The last successful page parsed was page number ' + (ajaxInfo.currentPage === null ? 1 : ajaxInfo.currentPage) + ' </p>';
         html += '<button id=\'errorClose\' class="btn btn-primary"> close </button>';
         html += '</div>';
         parseError.show();
@@ -1180,7 +1193,7 @@ class Main {
                                 deferr.resolve();
                             });
                         }, timeOut);
-                        timeOut += 300;
+                        timeOut += 350;
                     }
                 }
                 else {

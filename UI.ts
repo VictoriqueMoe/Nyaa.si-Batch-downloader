@@ -120,7 +120,6 @@ class UI {
         let html: string = '';
         html += '<div class=\'alert alert-danger\'>';
         html += '<p>There was an error in getting the information from page: \'' + ajaxInfo.error.pageAtError + '\'</p>';
-        html += '<p>The last successful page parsed was page number ' + (ajaxInfo.currentPage === null ? 1 : ajaxInfo.currentPage) + ' </p>';
         html += '<button id=\'errorClose\' class="btn btn-primary"> close </button>';
         html += '</div>';
         parseError.show();

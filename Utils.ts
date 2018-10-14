@@ -224,17 +224,29 @@ class Utils {
                 // @ts-ignore
                 let zip: JSZip = new JSZip();
                 let errors:Array<String> = [];
-                for (let i: number = 0; i < arguments.length; i++) {
-                    let arg: Array<any> = arguments[i];
-                    let blob: Blob = arg[0];
-                    let fileName: string = arg[1];
-                    let error:string = arg[2];
+                if(arrayd.length === 1){
+                    let blob:Blob = arguments[0];
+                    let fileName: string = arguments[1];
+                    let error:string = arguments[2];
                     if(error !== null){
                         errors.push(fileName);
                     }else{
                         zip.file(fileName, blob);
                     }
+                }else{
+                    for (let i: number = 0; i < arguments.length; i++) {
+                        let arg: Array<any> = arguments[i];
+                        let blob: Blob = arg[0];
+                        let fileName: string = arg[1];
+                        let error:string = arg[2];
+                        if(error !== null){
+                            errors.push(fileName);
+                        }else{
+                            zip.file(fileName, blob);
+                        }
+                    }
                 }
+
                 if(errors.length > 0){
                     let errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
                     alert(errorMessage);
@@ -288,7 +300,7 @@ class Utils {
     public static checkBoxValid(checkbox: JQuery<HTMLInputElement>): boolean {
         return checkbox.is(':checked');
     }
-
+    //TODO: check this
     private static _minSeedsSet(): boolean {
         let seeds: string = Localstore.getMinSeedsFromStore();
         if (seeds !== null && seeds.length > 0) {

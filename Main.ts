@@ -239,7 +239,7 @@ class Main {
                                 deferr.resolve();
                             });
                         }, timeOut);
-                        timeOut += 300;
+                        timeOut += 350;
                     }
                 } else {
                     // noinspection JSMismatchedCollectionQueryUpdate

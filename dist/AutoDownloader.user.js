@@ -662,15 +662,26 @@ var Utils = function () {
                     // @ts-ignore
                     var zip = new JSZip();
                     var errors = [];
-                    for (var _i3 = 0; _i3 < arguments.length; _i3++) {
-                        var arg = arguments[_i3];
-                        var blob = arg[0];
-                        var fileName = arg[1];
-                        var error = arg[2];
+                    if (arrayd.length === 1) {
+                        var blob = arguments[0];
+                        var fileName = arguments[1];
+                        var error = arguments[2];
                         if (error !== null) {
                             errors.push(fileName);
                         } else {
                             zip.file(fileName, blob);
+                        }
+                    } else {
+                        for (var _i3 = 0; _i3 < arguments.length; _i3++) {
+                            var arg = arguments[_i3];
+                            var _blob = arg[0];
+                            var _fileName = arg[1];
+                            var _error = arg[2];
+                            if (_error !== null) {
+                                errors.push(_fileName);
+                            } else {
+                                zip.file(_fileName, _blob);
+                            }
                         }
                     }
                     if (errors.length > 0) {
@@ -759,6 +770,8 @@ var Utils = function () {
         value: function checkBoxValid(checkbox) {
             return checkbox.is(':checked');
         }
+        //TODO: check this
+
     }, {
         key: '_minSeedsSet',
         value: function _minSeedsSet() {
@@ -992,7 +1005,6 @@ var UI = function () {
             var html = '';
             html += '<div class=\'alert alert-danger\'>';
             html += '<p>There was an error in getting the information from page: \'' + ajaxInfo.error.pageAtError + '\'</p>';
-            html += '<p>The last successful page parsed was page number ' + (ajaxInfo.currentPage === null ? 1 : ajaxInfo.currentPage) + ' </p>';
             html += '<button id=\'errorClose\' class="btn btn-primary"> close </button>';
             html += '</div>';
             parseError.show();
@@ -1411,7 +1423,7 @@ var Main = function () {
                                         deferr.resolve();
                                     });
                                 }, timeOut);
-                                timeOut += 300;
+                                timeOut += 350;
                             };
 
                             var _iteratorNormalCompletion2 = true;
