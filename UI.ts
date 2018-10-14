@@ -85,7 +85,7 @@ class UI {
             totalSize = Anime.getTotalSizeForRes(parseInt(res), false);
         }
         let seedLimit: string = Localstore.getMinSeedsFromStore();
-        if(seedLimit === "-1"){
+        if (seedLimit === "-1") {
             seedLimit = "none";
         }
         let html: string = '';
@@ -102,6 +102,10 @@ class UI {
         html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
         html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
         html += "<div class='hidden' id='loadingContainer'>";
+        html += "<hr />";
+        html += "<div class=\"progress\">";
+        html += "<div id='progressBarForZip' class=\"progress-bar progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"45\" aria-valuemin=\"0\" aria-valuemax=\"100\" style='width: 100%;'>Current status: <span id='progressStatus'></span></div>";
+        html += "</div>";
         html += "</div>";
         html += '</div>';
         return html;

@@ -1,19 +1,3 @@
-// ==UserScript==
-// @name        Nyaa.si Batch downloader
-// @namespace   Autodownload
-// @author      Victorique
-// @description Batch download torrents from nyaa.si
-// @include     *://nyaa.si/user/*?q=*
-// @include     *://nyaa.si/user/*?f=*&c=*&q=*
-// @version     7.1
-// @icon        https://i.imgur.com/nx5ejHb.png
-// @license     MIT
-// @run-at      document-idle
-// @grant       none
-// @require     https://greasyfork.org/scripts/19117-jsutils/code/JsUtils.js
-// @require     https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js
-// @require     https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
-// ==/UserScript==
 "use strict";
 import Deferred = JQuery.Deferred;
 import jqXHR = JQuery.jqXHR;
@@ -96,7 +80,8 @@ class Main {
             styles += '#clearResOptions{margin-left: 10px; margin-right: 10px ;cursor: pointer;}';
             styles += '#selectAllFromControl{cursor: pointer;}';
             styles += '#downloadCustomButton{float:right;}';
-            styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}'
+            styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}';
+            styles += "#loadingContainer{margin-top: 15px; margin-bottom: 45px;}";
             Utils.injectCss('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
             Utils.injectCss(styles);
         }

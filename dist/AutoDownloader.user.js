@@ -478,7 +478,7 @@ var Utils = function () {
                             return;
                         }
                     }.bind(this, );*/
-                    var saveAsFunc = saveAs.bind(blob, fileName, true);
+                    var saveAsFunc = saveAs.bind(this, blob, fileName, true);
                     callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
                 } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
                     if (xhr.status !== 200) {
@@ -661,32 +661,60 @@ var Utils = function () {
                     }
                     // @ts-ignore
                     var zip = new JSZip();
+                    var errors = [];
                     for (var _i3 = 0; _i3 < arguments.length; _i3++) {
                         var arg = arguments[_i3];
                         var blob = arg[0];
                         var fileName = arg[1];
+                        var error = arg[2];
+                        if (error !== null) {
+                            errors.push(fileName);
+                        }
+                        if (errors.length > 0) {
+                            var errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
+                            alert(errorMessage);
+                        }
                         zip.file(fileName, blob);
                     }
+                    $("#progressStatus").text("Generating zip file...");
                     zip.generateAsync({ type: "blob" }).then(function (blob) {
                         saveAs(blob, Anime.currentAnime + ".zip");
+                        $("#loadingContainer").hide();
+                        $("#progressStatus").text(null);
+                        $("#progressBarForZip").width(0);
+                        $('#alertUser').slideUp('slow');
                     }, function (err) {
                         alert(err);
                     });
                 });
                 var timerOffset = 0;
+                if (asZip) {
+                    $("#loadingContainer").show();
+                }
+                var count = 0;
 
                 var _loop = function _loop(currentUrl, deferr) {
                     var ep = Anime.getEpisodeFromUrl(currentUrl);
                     var fileName = ep.title.replace(/ /g, "_") + ".torrent";
                     setTimeout(function () {
+                        count++;
                         Utils.downloadViaJavaScript(currentUrl, undefined, function (blob, fileName, hasError, error, saveFunc) {
-                            deferr.resolve(blob, fileName);
                             if (!asZip) {
                                 saveFunc();
+                            } else {
+                                var percent = Math.floor(100 * count / ajaxPromiseMap.size);
+                                var doneAsString = percent + "%";
+                                $("#progressStatus").text("Downloading torrents: " + doneAsString);
+                                $("#progressBarForZip").width(doneAsString);
+                            }
+                            if (hasError) {
+                                deferr.resolve(blob, fileName, error);
+                            } else {
+                                deferr.resolve(blob, fileName, null);
                             }
                         }, "GET", fileName);
                     }, timerOffset);
-                    timerOffset += 350;
+                    timerOffset += 450;
                 };
 
                 var _iteratorNormalCompletion = true;
@@ -719,7 +747,9 @@ var Utils = function () {
                     }
                 }
 
-                $('#alertUser').slideUp('slow');
+                if (!asZip) {
+                    $('#alertUser').slideUp('slow');
+                }
                 $('#crossPage').prop('disabled', false);
             }
         }
@@ -942,6 +972,10 @@ var UI = function () {
             html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
             html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
             html += "<div class='hidden' id='loadingContainer'>";
+            html += "<hr />";
+            html += "<div class=\"progress\">";
+            html += "<div id='progressBarForZip' class=\"progress-bar progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"45\" aria-valuemin=\"0\" aria-valuemax=\"100\" style='width: 100%;'>Current status: <span id='progressStatus'></span></div>";
+            html += "</div>";
             html += "</div>";
             html += '</div>';
             return html;
@@ -1228,6 +1262,7 @@ var Main = function () {
                 styles += '#selectAllFromControl{cursor: pointer;}';
                 styles += '#downloadCustomButton{float:right;}';
                 styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}';
+                styles += "#loadingContainer{margin-top: 15px; margin-bottom: 45px;}";
                 Utils.injectCss('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
                 Utils.injectCss(styles);
             }

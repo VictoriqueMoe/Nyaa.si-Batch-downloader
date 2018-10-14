@@ -2,7 +2,7 @@ class Utils {
     private constructor() {
     }
 
-    public static downloadViaJavaScript(url: string, data: any, callBack: (blob: Blob, fileName: string, hasError: boolean, error: string, saveFunc:Function) => void, _type: string = "POST", fileName:string = null): void {
+    public static downloadViaJavaScript(url: string, data: any, callBack: (blob: Blob, fileName: string, hasError: boolean, error: string, saveFunc: Function) => void, _type: string = "POST", fileName: string = null): void {
         let xhr: XMLHttpRequest = new XMLHttpRequest();
         xhr.open(_type, url, true);
         xhr.responseType = "blob";
@@ -23,7 +23,7 @@ class Utils {
                         error = "internal server error";
                     }
                 }
-                let contentDispositionHeader:string = xhr.getResponseHeader("Content-Disposition");
+                let contentDispositionHeader: string = xhr.getResponseHeader("Content-Disposition");
                 if (fileName == null && contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
                     fileName = contentDispositionHeader.split("filename").pop();
                     fileName = fileName.replace("=", "");
@@ -47,7 +47,7 @@ class Utils {
                         return;
                     }
                 }.bind(this, );*/
-                let saveAsFunc:Function = saveAs.bind(blob, fileName, true);
+                let saveAsFunc: Function = saveAs.bind(this, blob, fileName, true);
                 callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
             } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
                 if (xhr.status !== 200) {
@@ -204,12 +204,12 @@ class Utils {
                 doIt(urlsToDownload, false);
             });
 
-            $("#downloadZip").on("click", function(){
+            $("#downloadZip").on("click", function () {
                 doIt(urlsToDownload, true);
             });
         }
 
-        function doIt(urls: Array<string>, asZip:boolean) {
+        function doIt(urls: Array<string>, asZip: boolean) {
             let ajaxPromiseMap: Map<string, Deferred<any, any, any>> = new Map();
             let arrayd: Array<Deferred<any, any, any>> = [];
             for (let i: number = 0; i < urls.length; i++) {
@@ -218,38 +218,68 @@ class Utils {
                 arrayd.push(d);
             }
             $.when.apply($, arrayd).done(function () {
-                if(!asZip){
+                if (!asZip) {
                     return;
                 }
                 // @ts-ignore
-                let zip:JSZip = new JSZip();
-                for(let i:number = 0; i < arguments.length; i++){
-                    let arg:Array<any> = arguments[i];
-                    let blob:Blob = arg[0];
-                    let fileName:string = arg[1];
+                let zip: JSZip = new JSZip();
+                let errors:Array<String> = [];
+                for (let i: number = 0; i < arguments.length; i++) {
+                    let arg: Array<any> = arguments[i];
+                    let blob: Blob = arg[0];
+                    let fileName: string = arg[1];
+                    let error:string = arg[2];
+                    if(error !== null){
+                        errors.push(fileName);
+                    }
+                    if(errors.length > 0){
+                        let errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
+                        alert(errorMessage);
+                    }
                     zip.file(fileName, blob);
                 }
-                zip.generateAsync({type:"blob"}).then(function (blob:Blob) {
-                    saveAs(blob, Anime.currentAnime+".zip");
-                }, function (err:string) {
+                $("#progressStatus").text("Generating zip file...");
+                zip.generateAsync({type: "blob"}).then(function (blob: Blob) {
+                    saveAs(blob, Anime.currentAnime + ".zip");
+                    $("#loadingContainer").hide();
+                    $("#progressStatus").text(null);
+                    $("#progressBarForZip").width(0);
+                    $('#alertUser').slideUp('slow');
+                }, function (err: string) {
                     alert(err);
                 });
             });
-            let timerOffset:number = 0;
+            let timerOffset: number = 0;
+            if(asZip){
+                $("#loadingContainer").show()
+            }
+            let count:number = 0;
             for (let [currentUrl, deferr] of ajaxPromiseMap) {
-                let ep:Episode = Anime.getEpisodeFromUrl(currentUrl);
-                let fileName:string =  ep.title.replace(/ /g,"_")+".torrent";
-                setTimeout(()=>{
-                    Utils.downloadViaJavaScript(currentUrl, undefined ,(blob: Blob, fileName: string, hasError: boolean, error: string, saveFunc:Function) =>{
-                        deferr.resolve(blob, fileName);
-                        if(!asZip){
+                let ep: Episode = Anime.getEpisodeFromUrl(currentUrl);
+                let fileName: string = ep.title.replace(/ /g, "_") + ".torrent";
+                setTimeout(() => {
+                    count++;
+                    Utils.downloadViaJavaScript(currentUrl, undefined, (blob: Blob, fileName: string, hasError: boolean, error: string, saveFunc: Function) => {
+                        if (!asZip) {
                             saveFunc();
+                        }else{
+                            let percent:number = Math.floor(100 * count / ajaxPromiseMap.size);
+                            let doneAsString:string = percent + "%";
+                            $("#progressStatus").text("Downloading torrents: " + doneAsString);
+                            $("#progressBarForZip").width(doneAsString);
+                        }
+                        if(hasError){
+                            deferr.resolve(blob, fileName, error);
+                        }else{
+                            deferr.resolve(blob, fileName, null);
                         }
                     }, "GET", fileName);
                 }, timerOffset);
-                timerOffset += 350;
+                timerOffset += 450;
             }
-            $('#alertUser').slideUp('slow');
+            if(!asZip){
+                $('#alertUser').slideUp('slow');
+            }
             $('#crossPage').prop('disabled', false);
         }
     }

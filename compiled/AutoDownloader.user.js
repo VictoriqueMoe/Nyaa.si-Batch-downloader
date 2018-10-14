@@ -353,7 +353,7 @@ class Utils {
                         return;
                     }
                 }.bind(this, );*/
-                let saveAsFunc = saveAs.bind(blob, fileName, true);
+                let saveAsFunc = saveAs.bind(this, blob, fileName, true);
                 callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
             }
             else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
@@ -524,33 +524,65 @@ class Utils {
                 }
                 // @ts-ignore
                 let zip = new JSZip();
+                let errors = [];
                 for (let i = 0; i < arguments.length; i++) {
                     let arg = arguments[i];
                     let blob = arg[0];
                     let fileName = arg[1];
+                    let error = arg[2];
+                    if (error !== null) {
+                        errors.push(fileName);
+                    }
+                    if (errors.length > 0) {
+                        let errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
+                        alert(errorMessage);
+                    }
                     zip.file(fileName, blob);
                 }
+                $("#progressStatus").text("Generating zip file...");
                 zip.generateAsync({ type: "blob" }).then(function (blob) {
                     saveAs(blob, Anime.currentAnime + ".zip");
+                    $("#loadingContainer").hide();
+                    $("#progressStatus").text(null);
+                    $("#progressBarForZip").width(0);
+                    $('#alertUser').slideUp('slow');
                 }, function (err) {
                     alert(err);
                 });
             });
             let timerOffset = 0;
+            if (asZip) {
+                $("#loadingContainer").show();
+            }
+            let count = 0;
             for (let [currentUrl, deferr] of ajaxPromiseMap) {
                 let ep = Anime.getEpisodeFromUrl(currentUrl);
                 let fileName = ep.title.replace(/ /g, "_") + ".torrent";
                 setTimeout(() => {
+                    count++;
                     Utils.downloadViaJavaScript(currentUrl, undefined, (blob, fileName, hasError, error, saveFunc) => {
-                        deferr.resolve(blob, fileName);
                         if (!asZip) {
                             saveFunc();
                         }
+                        else {
+                            let percent = Math.floor(100 * count / ajaxPromiseMap.size);
+                            let doneAsString = percent + "%";
+                            $("#progressStatus").text("Downloading torrents: " + doneAsString);
+                            $("#progressBarForZip").width(doneAsString);
+                        }
+                        if (hasError) {
+                            deferr.resolve(blob, fileName, error);
+                        }
+                        else {
+                            deferr.resolve(blob, fileName, null);
+                        }
                     }, "GET", fileName);
                 }, timerOffset);
-                timerOffset += 350;
+                timerOffset += 450;
             }
-            $('#alertUser').slideUp('slow');
+            if (!asZip) {
+                $('#alertUser').slideUp('slow');
+            }
             $('#crossPage').prop('disabled', false);
         }
     }
@@ -752,6 +784,10 @@ class UI {
         html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
         html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
         html += "<div class='hidden' id='loadingContainer'>";
+        html += "<hr />";
+        html += "<div class=\"progress\">";
+        html += "<div id='progressBarForZip' class=\"progress-bar progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"45\" aria-valuemin=\"0\" aria-valuemax=\"100\" style='width: 100%;'>Current status: <span id='progressStatus'></span></div>";
+        html += "</div>";
         html += "</div>";
         html += '</div>';
         return html;
@@ -996,6 +1032,7 @@ class Main {
             styles += '#selectAllFromControl{cursor: pointer;}';
             styles += '#downloadCustomButton{float:right;}';
             styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}';
+            styles += "#loadingContainer{margin-top: 15px; margin-bottom: 45px;}";
             Utils.injectCss('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
             Utils.injectCss(styles);
         }
