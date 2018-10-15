@@ -295,4 +295,3 @@ class Main {
         });
     }
 }
-Main.main();

@@ -12,83 +12,19 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Episode = function () {
-    function Episode(res, downloadLink, seeds, leechers, uid, resides, title, size) {
-        _classCallCheck(this, Episode);
-
-        this._res = res;
-        this._downloadLink = downloadLink;
-        this._seeds = seeds;
-        this._leechers = leechers;
-        this._uid = uid;
-        this._resides = resides;
-        this._title = title;
-        this._size = size;
+var AbstractEps = function () {
+    function AbstractEps() {
+        _classCallCheck(this, AbstractEps);
     }
 
-    _createClass(Episode, [{
-        key: 'equals',
-        value: function equals(ep) {
-            return this.uid === ep.uid;
-        }
-    }, {
-        key: 'res',
-        get: function get() {
-            return this._res;
-        }
-    }, {
-        key: 'downloadLink',
-        get: function get() {
-            return this._downloadLink;
-        }
-    }, {
-        key: 'seeds',
-        get: function get() {
-            return this._seeds;
-        }
-    }, {
-        key: 'leechers',
-        get: function get() {
-            return this._leechers;
-        }
-    }, {
-        key: 'uid',
-        get: function get() {
-            return this._uid;
-        }
-    }, {
-        key: 'resides',
-        get: function get() {
-            return this._resides;
-        }
-    }, {
-        key: 'title',
-        get: function get() {
-            return this._title;
-        }
-    }, {
-        key: 'size',
-        get: function get() {
-            return this._size;
-        }
-    }]);
-
-    return Episode;
-}();
-
-var _AbstractEps = function () {
-    function _AbstractEps() {
-        _classCallCheck(this, _AbstractEps);
-    }
-
-    _createClass(_AbstractEps, null, [{
+    _createClass(AbstractEps, null, [{
         key: 'abstractGetEps',
         value: function abstractGetEps(skipSeedLimit) {
             var minSeeds = Number.parseInt(Localstore.getMinSeedsFromStore());
             if (minSeeds > -1 && skipSeedLimit === false) {
                 var arrayOfEps = [];
-                for (var i = 0, len = _AbstractEps.eps.length; i < len; i++) {
-                    var currentEp = _AbstractEps.eps[i];
+                for (var i = 0, len = AbstractEps.eps.length; i < len; i++) {
+                    var currentEp = AbstractEps.eps[i];
                     if (currentEp.seeds < minSeeds) {
                         continue;
                     }
@@ -96,7 +32,7 @@ var _AbstractEps = function () {
                 }
                 return arrayOfEps;
             } else {
-                return _AbstractEps.eps;
+                return AbstractEps.eps;
             }
         }
     }, {
@@ -105,19 +41,19 @@ var _AbstractEps = function () {
             if (Anime.isValidRes(ep.res) === false) {
                 throw new TypeError('The Episode supplied does not have a valid resolution');
             }
-            for (var i = 0, len = _AbstractEps.eps.length; i < len; i++) {
-                var epi = _AbstractEps.eps[i];
+            for (var i = 0, len = AbstractEps.eps.length; i < len; i++) {
+                var epi = AbstractEps.eps[i];
                 if (epi.equals(ep)) {
                     console.warn('The episode supplied already exsists, this episode has been ignored');
                     return;
                 }
             }
-            _AbstractEps.eps.push(ep);
+            AbstractEps.eps.push(ep);
         }
     }, {
         key: 'removeEpisodeFromAnime',
         value: function removeEpisodeFromAnime(obj) {
-            var arr = _AbstractEps.eps;
+            var arr = AbstractEps.eps;
             var i = arr.length;
             while (i--) {
                 if (arr[i] === obj) {
@@ -127,13 +63,14 @@ var _AbstractEps = function () {
         }
     }]);
 
-    return _AbstractEps;
+    return AbstractEps;
 }();
 
-_AbstractEps.eps = []; // this is the main array that holds all the episodes per anime
+AbstractEps.eps = []; // this is the main array that holds all the episodes per anime
+///<reference path="AbstractEps.ts"/>
 
-var Anime = function (_AbstractEps2) {
-    _inherits(Anime, _AbstractEps2);
+var Anime = function (_AbstractEps) {
+    _inherits(Anime, _AbstractEps);
 
     function Anime() {
         _classCallCheck(this, Anime);
@@ -418,7 +355,7 @@ var Anime = function (_AbstractEps2) {
     }]);
 
     return Anime;
-}(_AbstractEps);
+}(AbstractEps);
 
 Anime._availableRes = [];
 Anime._supportedRes = [{ "res": 1080, "fullRes": "1920x1080" }, {
@@ -426,774 +363,68 @@ Anime._supportedRes = [{ "res": 1080, "fullRes": "1920x1080" }, {
     "fullRes": "1280x720"
 }, { "res": 480, "fullRes": "640x480" }, { "res": 360, "fullRes": "640x360" }];
 
-var Utils = function () {
-    function Utils() {
-        _classCallCheck(this, Utils);
+var Episode = function () {
+    function Episode(res, downloadLink, seeds, leechers, uid, resides, title, size) {
+        _classCallCheck(this, Episode);
+
+        this._res = res;
+        this._downloadLink = downloadLink;
+        this._seeds = seeds;
+        this._leechers = leechers;
+        this._uid = uid;
+        this._resides = resides;
+        this._title = title;
+        this._size = size;
     }
 
-    _createClass(Utils, null, [{
-        key: 'downloadViaJavaScript',
-        value: function downloadViaJavaScript(url, data, callBack) {
-            var _type = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "POST";
-
-            var fileName = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
-
-            var xhr = new XMLHttpRequest();
-            xhr.open(_type, url, true);
-            xhr.responseType = "blob";
-            xhr.withCredentials = true;
-            if (_type == "POST") {
-                xhr.setRequestHeader("Content-type", "application/json");
-            }
-            var hasError = false;
-            var mediaType = null;
-            xhr.onreadystatechange = function () {
-                var error = null;
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (hasError) {
-                        if (xhr.response != null && xhr.response.length > 0) {
-                            error = xhr.response;
-                        } else {
-                            error = "internal server error";
-                        }
-                    }
-                    var contentDispositionHeader = xhr.getResponseHeader("Content-Disposition");
-                    if (fileName == null && contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
-                        fileName = contentDispositionHeader.split("filename").pop();
-                        fileName = fileName.replace("=", "");
-                        fileName = fileName.trim();
-                        fileName = fileName.replace(/"/g, "");
-                    }
-                    var mediaTypeHeader = xhr.getResponseHeader("Content-Type");
-                    if (mediaTypeHeader != null) {
-                        mediaType = mediaTypeHeader;
-                    } else {
-                        mediaType = "application/octet-stream";
-                    }
-                    var blob = xhr.response;
-                    /*let returnFunction = function save() {
-                        if (hasError) {
-                            let error:string = "Unable to download file: '" +fileName+ "' Please download this file manually";
-                            alert(error);
-                            return;
-                        }
-                    }.bind(this, );*/
-                    var saveAsFunc = saveAs.bind(this, blob, fileName, true);
-                    callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
-                } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-                    if (xhr.status !== 200) {
-                        xhr.responseType = "text";
-                        hasError = true;
-                    }
-                }
-            };
-            if (_type === "POST") {
-                xhr.send(JSON.stringify(data));
-            } else {
-                xhr.send();
-            }
+    _createClass(Episode, [{
+        key: 'equals',
+        value: function equals(ep) {
+            return this.uid === ep.uid;
         }
     }, {
-        key: 'sortSelect',
-        value: function sortSelect(selElem) {
-            var tmpAry = [];
-            for (var i = 0, length = selElem.options.length; i < length; i++) {
-                tmpAry[i] = [];
-                tmpAry[i][0] = selElem.options[i].text;
-                tmpAry[i][1] = selElem.options[i].dataset.url;
-            }
-            tmpAry.sort(function (a, b) {
-                // @ts-ignore
-                return a[0].toUpperCase().localeCompare(b[0].toUpperCase());
-            });
-            selElem.innerHTML = "";
-            for (var _i = 0, len = tmpAry.length; _i < len; _i++) {
-                var op = new Option(tmpAry[_i][0]);
-                op.dataset.url = tmpAry[_i][1];
-                selElem.options[_i] = op;
-            }
+        key: 'res',
+        get: function get() {
+            return this._res;
         }
     }, {
-        key: 'injectCss',
-        value: function injectCss(css) {
-            function _isUrl(url) {
-                var matcher = new RegExp(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/);
-                return matcher.test(url);
-            }
-            if (_isUrl(css)) {
-                $("<link>").prop({
-                    "type": "text/css",
-                    "rel": "stylesheet"
-                }).attr("href", css).appendTo("head");
-            } else {
-                $("<style>").prop("type", "text/css").html(css).appendTo("head");
-            }
+        key: 'downloadLink',
+        get: function get() {
+            return this._downloadLink;
         }
     }, {
-        key: 'addParameter',
-        value: function addParameter(url, parameterName, parameterValue) {
-            var atStart = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-
-            var replaceDuplicates = true;
-            var urlhash = void 0;
-            var cl = void 0;
-            if (url.indexOf('#') > 0) {
-                cl = url.indexOf('#');
-                urlhash = url.substring(url.indexOf('#'), url.length);
-            } else {
-                urlhash = '';
-                cl = url.length;
-            }
-            var sourceUrl = url.substring(0, cl);
-            var urlParts = sourceUrl.split("?");
-            var newQueryString = "";
-            if (urlParts.length > 1) {
-                var parameters = urlParts[1].split("&");
-                for (var i = 0; i < parameters.length; i++) {
-                    var parameterParts = parameters[i].split("=");
-                    if (!(replaceDuplicates && parameterParts[0] == parameterName)) {
-                        if (newQueryString == "") {
-                            newQueryString = "?";
-                        } else {
-                            newQueryString += "&";
-                        }
-                        newQueryString += parameterParts[0] + "=" + (parameterParts[1] ? parameterParts[1] : '');
-                    }
-                }
-            }
-            if (newQueryString == "") {
-                newQueryString = "?";
-            }
-            if (atStart) {
-                newQueryString = '?' + parameterName + "=" + parameterValue + (newQueryString.length > 1 ? '&' + newQueryString.substring(1) : '');
-            } else {
-                if (newQueryString !== "" && newQueryString != '?') newQueryString += "&";
-                newQueryString += parameterName + "=" + (parameterValue ? parameterValue : '');
-            }
-            return urlParts[0] + newQueryString + urlhash;
+        key: 'seeds',
+        get: function get() {
+            return this._seeds;
         }
     }, {
-        key: 'getElementFromJqueryArray',
-        value: function getElementFromJqueryArray(elm, index) {
-            return elm.filter(function (i) {
-                return i === index;
-            });
+        key: 'leechers',
+        get: function get() {
+            return this._leechers;
         }
     }, {
-        key: 'getTable',
-        value: function getTable() {
-            return $('table');
+        key: 'uid',
+        get: function get() {
+            return this._uid;
         }
     }, {
-        key: 'getQueryFromUrl',
-        value: function getQueryFromUrl(url) {
-            return url.split("&").reduce(function (prev, curr, i, arr) {
-                var p = curr.split("=");
-                prev[decodeURIComponent(p[0])] = decodeURIComponent(p[1]);
-                return prev;
-            }, {});
+        key: 'resides',
+        get: function get() {
+            return this._resides;
         }
     }, {
-        key: 'isjQueryObject',
-        value: function isjQueryObject(obj) {
-            return obj instanceof jQuery || 'jquery' in Object(obj);
+        key: 'title',
+        get: function get() {
+            return this._title;
         }
     }, {
-        key: 'disableButton',
-        value: function disableButton(button) {
-            button.prop('disabled', true);
-        }
-    }, {
-        key: 'enableButton',
-        value: function enableButton(button) {
-            button.prop('disabled', false);
-        }
-        // @ts-ignore
-
-    }, {
-        key: 'doDownloads',
-        value: function doDownloads(event) {
-            $('#crossPage').prop('disabled', true);
-            var type = $(event.target).data('type');
-            var html = UI.builDownloadAlert(type);
-            var urlsToDownload = [];
-            $('#alertUser').html(html).slideDown("slow").show();
-            if (type === 'downloadSelected') {
-                $.each($('.checkboxes:checked').prev('a'), function () {
-                    var ep = Anime.getEpisodeFromAnchor(this);
-                    urlsToDownload.push(ep.downloadLink);
-                });
-            } else if (type === 'downloadSelects') {
-                $.each($('#animeSelection option:selected'), function () {
-                    var url = this.dataset.url;
-                    urlsToDownload.push(url);
-                });
-            } else {
-                var eps = Anime.getEpsForRes(parseInt($('#downloadRes').val()), false);
-                for (var i = 0, len = eps.length; i < len; i++) {
-                    urlsToDownload.push(eps[i].downloadLink);
-                }
-            }
-            bindAlertControls();
-            function bindAlertControls() {
-                $('#alertButtonCancel').on('click', function () {
-                    $('#alertUser').slideUp('slow');
-                    $('#crossPage').prop('disabled', false);
-                });
-                $('#alertButton').on('click', function () {
-                    doIt(urlsToDownload, false);
-                });
-                $("#downloadZip").on("click", function () {
-                    doIt(urlsToDownload, true);
-                });
-            }
-            function doIt(urls, asZip) {
-                var ajaxPromiseMap = new Map();
-                var arrayd = [];
-                for (var _i2 = 0; _i2 < urls.length; _i2++) {
-                    var d = $.Deferred();
-                    ajaxPromiseMap.set(urls[_i2], d);
-                    arrayd.push(d);
-                }
-                $.when.apply($, arrayd).done(function () {
-                    if (!asZip) {
-                        return;
-                    }
-                    // @ts-ignore
-                    var zip = new JSZip();
-                    var errors = [];
-                    if (arrayd.length === 1) {
-                        var blob = arguments[0];
-                        var fileName = arguments[1];
-                        var error = arguments[2];
-                        if (error !== null) {
-                            errors.push(fileName);
-                        } else {
-                            zip.file(fileName, blob);
-                        }
-                    } else {
-                        for (var _i3 = 0; _i3 < arguments.length; _i3++) {
-                            var arg = arguments[_i3];
-                            var _blob = arg[0];
-                            var _fileName = arg[1];
-                            var _error = arg[2];
-                            if (_error !== null) {
-                                errors.push(_fileName);
-                            } else {
-                                zip.file(_fileName, _blob);
-                            }
-                        }
-                    }
-                    if (errors.length > 0) {
-                        var errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
-                        alert(errorMessage);
-                    }
-                    $("#progressStatus").text("Generating zip file...");
-                    zip.generateAsync({ type: "blob" }).then(function (blob) {
-                        saveAs(blob, Anime.currentAnime + ".zip");
-                        $("#loadingContainer").hide();
-                        $("#progressStatus").text(null);
-                        $("#progressBarForZip").width(0);
-                        $('#alertUser').slideUp('slow');
-                    }, function (err) {
-                        alert(err);
-                    });
-                });
-                var timerOffset = 0;
-                if (asZip) {
-                    $("#loadingContainer").show();
-                }
-                var count = 0;
-
-                var _loop = function _loop(currentUrl, deferr) {
-                    var ep = Anime.getEpisodeFromUrl(currentUrl);
-                    var fileName = ep.title.replace(/ /g, "_") + ".torrent";
-                    setTimeout(function () {
-                        count++;
-                        Utils.downloadViaJavaScript(currentUrl, undefined, function (blob, fileName, hasError, error, saveFunc) {
-                            if (!asZip) {
-                                saveFunc();
-                            } else {
-                                var percent = Math.floor(100 * count / ajaxPromiseMap.size);
-                                var doneAsString = percent + "%";
-                                $("#progressStatus").text("Downloading torrents: " + doneAsString);
-                                $("#progressBarForZip").width(doneAsString);
-                            }
-                            if (hasError) {
-                                deferr.resolve(blob, fileName, error);
-                            } else {
-                                deferr.resolve(blob, fileName, null);
-                            }
-                        }, "GET", fileName);
-                    }, timerOffset);
-                    timerOffset += 450;
-                };
-
-                var _iteratorNormalCompletion = true;
-                var _didIteratorError = false;
-                var _iteratorError = undefined;
-
-                try {
-                    for (var _iterator = ajaxPromiseMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var _ref = _step.value;
-
-                        var _ref2 = _slicedToArray(_ref, 2);
-
-                        var currentUrl = _ref2[0];
-                        var deferr = _ref2[1];
-
-                        _loop(currentUrl, deferr);
-                    }
-                } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion && _iterator.return) {
-                            _iterator.return();
-                        }
-                    } finally {
-                        if (_didIteratorError) {
-                            throw _iteratorError;
-                        }
-                    }
-                }
-
-                if (!asZip) {
-                    $('#alertUser').slideUp('slow');
-                }
-                $('#crossPage').prop('disabled', false);
-            }
-        }
-    }, {
-        key: 'checkBoxValid',
-        value: function checkBoxValid(checkbox) {
-            return checkbox.is(':checked');
-        }
-        //TODO: check this
-
-    }, {
-        key: '_minSeedsSet',
-        value: function _minSeedsSet() {
-            var seeds = Localstore.getMinSeedsFromStore();
-            if (seeds !== null && seeds.length > 0) {
-                return Number.parseInt(seeds) !== 1;
-            }
-            return false;
-        }
-    }, {
-        key: 'getCurrentPageOffset',
-        value: function getCurrentPageOffset() {
-            return parseInt(typeof QueryString.p === 'undefined' ? 1 : QueryString.p);
-        }
-    }, {
-        key: 'arrayCopy',
-        value: function arrayCopy(array) {
-            var deep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-            return $.extend(deep, [], array);
-        }
-    }, {
-        key: 'cleanAvailableResolutions',
-        value: function cleanAvailableResolutions() {
-            var avRes = Utils.arrayCopy(Anime.availableRes, true);
-            for (var i = 0, len = avRes.length; i < len; i++) {
-                var currentRes = avRes[i].res;
-                if (Anime.getAmountOfEpsFromRes(currentRes, true) === 0) {
-                    Anime.removeAvailableResolutions(currentRes);
-                }
-            }
-        }
-    }, {
-        key: 'sortAllControls',
-        value: function sortAllControls() {
-            Utils.sortSelect(document.getElementById('animeSelection'));
-            Utils.sortSelect(document.getElementById('downloadRes'));
-            // @ts-ignore
-            $('#info').sortTable(0);
-        }
-    }, {
-        key: 'reBindSelectFilters',
-        value: function reBindSelectFilters() {
-            // @ts-ignore
-            $('input[name=\'filterSelect\']').offOn('change', handleSelect);
-            // @ts-ignore
-            $('#clearResOptions').offOn('click', handleSelect);
-            // @ts-ignore
-            $("#animeSelection").offOn("click", function () {
-                UI.autoEnableAcceptSelect();
-            });
-            // @ts-ignore
-            $("#selectAllFromControl").offOn("click", function () {
-                var allSelected = $("#animeSelection option:selected").length === $("#animeSelection option").length;
-                if (allSelected) {
-                    $(this).text("Select all");
-                    $("#animeSelection option").prop("selected", false);
-                } else {
-                    $(this).text("deselect all");
-                    $("#animeSelection option").prop("selected", true);
-                }
-                UI.autoEnableAcceptSelect();
-            });
-            function handleSelect(event) {
-                var resTOFilter = $(event.target).data('set');
-                $('#selectAnime').html(UI.buildSelect(resTOFilter));
-                Utils.sortAllControls();
-                var searchApplied = UI.getAppliedSearch();
-                if (searchApplied !== '') {
-                    UI.applySearch(searchApplied);
-                }
-                Utils.reBindSelectFilters();
-            }
-        }
-    }, {
-        key: 'getHumanReadableSize',
-        value: function getHumanReadableSize(from) {
-            var decimals = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 3;
-
-            var bits = 0;
-            if (Array.isArray(from)) {
-                for (var i = 0; i < from.length; i++) {
-                    var ep = from[i];
-                    bits += ep.size;
-                }
-            } else if (typeof from === 'number') {
-                bits = from;
-            } else {
-                bits += from.size;
-            }
-            function formatBytes(bytes, decimals) {
-                if (bytes == 0) {
-                    return '0 Byte';
-                }
-                var k = 1024;
-                var dm = decimals + 1 || 3;
-                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-                var i = Math.floor(Math.log(bytes) / Math.log(k));
-                return (bytes / Math.pow(k, i)).toPrecision(dm) + ' ' + sizes[i];
-            }
-            return formatBytes(bits, decimals);
+        key: 'size',
+        get: function get() {
+            return this._size;
         }
     }]);
 
-    return Utils;
-}();
-
-var UI = function () {
-    function UI() {
-        _classCallCheck(this, UI);
-    }
-
-    _createClass(UI, null, [{
-        key: 'buildTable',
-        value: function buildTable() {
-            var html = '';
-            html += '<table class="table table-bordered table-hover table-striped torrent-list" style=\'width: 100%\' id=\'info\'>';
-            html += '<caption>Download infomation</caption>';
-            html += '<thead>';
-            html += '<tr>';
-            html += '<th>resolution</th>';
-            html += '<th>Episode count</th>';
-            html += '<th>Average seeds</th>';
-            html += '<th>Average leechers</th>';
-            html += '<th>Total size</th>';
-            html += '</tr>';
-            html += '</thead>';
-            html += '<tbody>';
-            var allRes = Anime.availableRes;
-            for (var i = 0; i < allRes.length; i++) {
-                var currRes = allRes[i];
-                var localRes = currRes.res;
-                html += '<tr>';
-                html += '<td>' + (localRes === -1 ? 'Others' : localRes + 'p') + '</td>';
-                html += '<td>' + Anime.getAmountOfEpsFromRes(localRes, true) + '</td>';
-                html += '<td>' + Anime.avgSeedsForRes(localRes, true) + '</td>';
-                html += '<td>' + Anime.avgPeersForRes(localRes, true) + '</td>';
-                html += '<td>' + Anime.getTotalSizeForRes(localRes, true) + ' (aprox)</td>';
-                html += '</tr>';
-            }
-            html += '</tbody>';
-            html += '</table>';
-            return html;
-        }
-    }, {
-        key: 'stateChangeAcceptSelect',
-        value: function stateChangeAcceptSelect(state) {
-            // @ts-ignore
-            $("#acceptSelect").enableButton(state);
-        }
-    }, {
-        key: 'autoEnableAcceptSelect',
-        value: function autoEnableAcceptSelect() {
-            var selection = $("#animeSelection option:selected");
-            UI.stateChangeAcceptSelect(selection.length > 0);
-        }
-    }, {
-        key: 'buildDropdownSelections',
-        value: function buildDropdownSelections() {
-            var html = '';
-            html += '<select class="form-control" style="margin-right:5px;display: inline;width: auto;" id="downloadRes">';
-            var allRes = Anime.availableRes;
-            for (var i = 0; i < allRes.length; i++) {
-                var currRes = allRes[i];
-                var localRes = currRes.res;
-                html += '<option value=' + localRes + '>' + (localRes === -1 ? 'Others' : localRes + 'p') + '</option>';
-            }
-            html += '</select>';
-            return html;
-        }
-    }, {
-        key: 'builDownloadAlert',
-        value: function builDownloadAlert(type) {
-            var amountOfAnime = 0;
-            var selectedRes = Number.parseInt($('#downloadRes').val());
-            var res = null;
-            var totalSize = null;
-            if (type === 'downloadSelected') {
-                amountOfAnime = $('.checkboxes:checked').length;
-                res = 'custom';
-            } else if (type === 'downloadSelects') {
-                amountOfAnime = $('#animeSelection option:selected').length;
-                totalSize = Utils.getHumanReadableSize(function () {
-                    var localSize = 0;
-                    $('#animeSelection option:selected').each(function () {
-                        var url = this.dataset.url;
-                        localSize += Anime.getEpisodeFromAnchor(url).size;
-                    });
-                    return localSize;
-                }());
-                res = 'custom';
-            } else {
-                amountOfAnime = Anime.getAmountOfEpsFromRes(selectedRes, false);
-                res = selectedRes === -1 ? 'Others' : selectedRes + 'p';
-                totalSize = Anime.getTotalSizeForRes(parseInt(res), false);
-            }
-            var seedLimit = Localstore.getMinSeedsFromStore();
-            if (seedLimit === "-1") {
-                seedLimit = "none";
-            }
-            var html = '';
-            html += '<div class=\'alert alert-success\'>';
-            html += '<div><strong>Download: ' + res + '</strong></div> <br />';
-            html += '<div><strong>Seed Limit: ' + seedLimit + '</strong></div>';
-            if (totalSize !== null) {
-                html += '<br /><div><strong>Total size: ' + totalSize + ' (aprox)</strong></div>';
-            }
-            html += '<p>You are about to download ' + amountOfAnime + ' ep(s)</p>';
-            html += '<p>This will cause ' + amountOfAnime + ' download pop-up(s) Are you sure you want to continue?</p>';
-            html += '<p>If there are a lot of eps, your browser might stop responding for a while. This is normal. If you are on Google Chrome, it will ask you to allow multiple-downloads</p>';
-            html += '<button type="button" class="btn btn-warning downloadButton" id=\'alertButtonCancel\'>Cancel</button>';
-            html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
-            html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
-            html += "<div class='hidden' id='loadingContainer'>";
-            html += "<hr />";
-            html += "<div class=\"progress\">";
-            html += "<div id='progressBarForZip' class=\"progress-bar progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"45\" aria-valuemin=\"0\" aria-valuemax=\"100\" style='width: 100%;'>Current status: <span id='progressStatus'></span></div>";
-            html += "</div>";
-            html += "</div>";
-            html += '</div>';
-            return html;
-        }
-    }, {
-        key: 'showAjaxErrorAlert',
-        value: function showAjaxErrorAlert(ajaxInfo) {
-            var parseError = $('#parseErrors');
-            if (!parseError.is(':hidden')) {
-                return null;
-            }
-            parseError.html('');
-            var html = '';
-            html += '<div class=\'alert alert-danger\'>';
-            html += '<p>There was an error in getting the information from page: \'' + ajaxInfo.error.pageAtError + '\'</p>';
-            html += '<button id=\'errorClose\' class="btn btn-primary"> close </button>';
-            html += '</div>';
-            parseError.show();
-            parseError.html(html);
-            $('#errorClose').off('click').on('click', function () {
-                $('#parseErrors').slideUp('slow', function () {
-                    $(this).html('');
-                });
-            });
-        }
-    }, {
-        key: 'buildSelect',
-        value: function buildSelect() {
-            var resTOFilter = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "none";
-
-            var html = '';
-            UI.epsInSelect = [];
-            var minSeeds = Number.parseInt(Localstore.getMinSeedsFromStore());
-            html += '<div id=\'selectWrapper\'>';
-            html += '<div id=\'selectContainer\'>';
-            html += '<p>Or you can select episodes here:</p>';
-            html += '<p>Seed limit: ' + (minSeeds === -1 ? 'None' : minSeeds) + '</p>';
-            html += '<select class="form-control" id=\'animeSelection\' multiple size=\'20\'>';
-            var allRes = Anime.availableRes;
-            for (var i = 0; i < allRes.length; i++) {
-                var currRes = allRes[i];
-                var localRes = currRes.res;
-                var eps = Anime.getEpsForRes(localRes, false);
-                for (var j = 0, len = eps.length; j < len; j++) {
-                    var currentEp = eps[j];
-                    if (resTOFilter == 'none' || currentEp.res == resTOFilter) {
-                        html += '<option data-url=\'' + currentEp.downloadLink + '\'>';
-                        html += currentEp.title + ' - Seeders: ' + currentEp.seeds;
-                        UI.epsInSelect.push(currentEp);
-                        html += '</option>';
-                    } else {
-                        break;
-                    }
-                }
-            }
-            html += '</select>';
-            html += '<span>Filter select control: </span>';
-            var checked = false;
-            for (var _i4 = 0; _i4 < allRes.length; _i4++) {
-                if (resTOFilter == allRes[_i4].res) {
-                    checked = true;
-                }
-                html += '<input type=\'radio\' ' + (checked ? 'checked' : '') + ' data-set= \'' + allRes[_i4].res + '\' name=\'filterSelect\'/>' + '<label class="filterLabel">' + (allRes[_i4].res === -1 ? 'Others' : allRes[_i4].res + 'p') + '</label>';
-                checked = false;
-            }
-            html += '<a id=\'clearResOptions\' data-set=\'none\' >clear resolution filter</a>';
-            html += '<a id=\'selectAllFromControl\'>Select all</a>';
-            html += '</div>';
-            html += '</div>';
-            // @ts-ignore
-            $("#acceptSelect").enableButton(false);
-            return html;
-        }
-    }, {
-        key: 'applySearch',
-        value: function applySearch(textToFilter) {
-            var opts = UI.epsInSelect;
-            var rxp = new RegExp(textToFilter);
-            var optlist = $('#animeSelection').empty();
-            for (var i = 0, len = opts.length; i < len; i++) {
-                var ep = opts[i];
-                if (rxp.test(ep.title)) {
-                    optlist.append('<option data-url=\'' + ep.downloadLink + '\'>' + ep.title + ' - Seeders: ' + ep.seeds + '</option>');
-                }
-            }
-            UI.searchApplied = textToFilter;
-            Utils.sortSelect(document.getElementById("animeSelection"));
-            UI.autoEnableAcceptSelect();
-        }
-    }, {
-        key: 'getAppliedSearch',
-        value: function getAppliedSearch() {
-            return UI.searchApplied;
-        }
-    }, {
-        key: 'getEpsInSelect',
-        value: function getEpsInSelect() {
-            return UI.epsInSelect;
-        }
-    }]);
-
-    return UI;
-}();
-
-UI.epsInSelect = [];
-UI.searchApplied = '';
-
-var DataParser = function () {
-    function DataParser(table) {
-        _classCallCheck(this, DataParser);
-
-        this.table = null;
-        this.table = table;
-    }
-
-    _createClass(DataParser, [{
-        key: 'parseTable',
-        value: function parseTable(currentPage) {
-            var trRow = this.table.find('img[src*=\'/static/img/icons/nyaa/1_2.png\']').closest('tr');
-            var eps = [];
-            $.each($(trRow), function () {
-                var resInfo = parseRes(this);
-                if (resInfo === null) {
-                    Anime.addAvailableResolutions(-1, null);
-                } else {
-                    Anime.addAvailableResolutions(resInfo.res, resInfo.fullRes);
-                }
-                var info = getEpisodeInfo(this);
-                eps.push(new Episode(typeof resInfo.res === 'undefined' ? -1 : resInfo.res, info.currentDownloadLink, info.seeds, info.leech, info.uid, currentPage, info.title, info.size));
-            });
-            return eps;
-            function parseRes(eventContent) {
-                var supportedRes = Anime.supportedRes;
-                for (var i = 0; i < supportedRes.length; i++) {
-                    var currRes = supportedRes[i].res;
-                    var currFullRes = supportedRes[i].fullRes;
-                    if ($(eventContent).children('td:nth-child(2)').text().indexOf(currRes + 'p') > -1 || $(eventContent).children('td:nth-child(2)').text().indexOf(currFullRes) > -1) {
-                        return supportedRes[i];
-                    }
-                }
-            }
-            function getEpisodeInfo(eventContent) {
-                var _eventContent = $(eventContent);
-                var currentDownloadLink = Anime.getTdFromTable(_eventContent, 3).find("a")[0].href;
-                function getTextContent(idx) {
-                    return isNaN(parseInt(Anime.getTdFromTable(_eventContent, idx).text())) ? 0 : parseInt(Anime.getTdFromTable(_eventContent, idx).text());
-                }
-                function convertToString(ev) {
-                    var sizeValue = Anime.getTdFromTable(ev, 4).text();
-                    var sizeText = $.trim(sizeValue.split(' ').pop());
-                    var intValue = parseInt(sizeValue);
-                    switch (sizeText) {
-                        case "MiB":
-                            return Math.pow(2, 20) * intValue;
-                        case "GiB":
-                            return intValue * 1073741824;
-                        default:
-                            return 0;
-                    }
-                }
-                var seeds = getTextContent(6);
-                var leech = getTextContent(7);
-                var title = Anime.getTdFromTable(_eventContent, 2).text().trim().substring(1).trim();
-                var uid = Anime.getUidFromJqueryObject(_eventContent);
-                var size = convertToString(_eventContent);
-                return {
-                    'currentDownloadLink': currentDownloadLink,
-                    'seeds': seeds,
-                    'leech': leech,
-                    'title': title,
-                    'uid': uid,
-                    "size": size
-                };
-            }
-        }
-    }]);
-
-    return DataParser;
-}();
-
-var Localstore = function () {
-    function Localstore() {
-        _classCallCheck(this, Localstore);
-    }
-
-    _createClass(Localstore, null, [{
-        key: 'getMinSeedsFromStore',
-        value: function getMinSeedsFromStore() {
-            var lo = localStorage.getItem('minSeeds');
-            return lo === null ? "-1" : lo;
-        }
-    }, {
-        key: 'setMinSeedsFromStore',
-        value: function setMinSeedsFromStore(seeds) {
-            localStorage.setItem('minSeeds', seeds.toString());
-        }
-    }, {
-        key: 'removeMinSeedsFromStore',
-        value: function removeMinSeedsFromStore() {
-            localStorage.removeItem('minSeeds');
-        }
-    }]);
-
-    return Localstore;
+    return Episode;
 }();
 
 var QueryString = function () {
@@ -1400,7 +631,7 @@ var Main = function () {
                             });
                             var timeOut = 0;
 
-                            var _loop2 = function _loop2(cur, deferr) {
+                            var _loop = function _loop(cur, deferr) {
                                 var currentPage = 0;
                                 var queryObjet = Utils.getQueryFromUrl(cur);
                                 if (queryObjet.p) {
@@ -1426,32 +657,32 @@ var Main = function () {
                                 timeOut += 350;
                             };
 
-                            var _iteratorNormalCompletion2 = true;
-                            var _didIteratorError2 = false;
-                            var _iteratorError2 = undefined;
+                            var _iteratorNormalCompletion = true;
+                            var _didIteratorError = false;
+                            var _iteratorError = undefined;
 
                             try {
-                                for (var _iterator2 = ajaxPromiseMap[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                                    var _ref3 = _step2.value;
+                                for (var _iterator = ajaxPromiseMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                                    var _ref = _step.value;
 
-                                    var _ref4 = _slicedToArray(_ref3, 2);
+                                    var _ref2 = _slicedToArray(_ref, 2);
 
-                                    var cur = _ref4[0];
-                                    var deferr = _ref4[1];
+                                    var cur = _ref2[0];
+                                    var deferr = _ref2[1];
 
-                                    _loop2(cur, deferr);
+                                    _loop(cur, deferr);
                                 }
                             } catch (err) {
-                                _didIteratorError2 = true;
-                                _iteratorError2 = err;
+                                _didIteratorError = true;
+                                _iteratorError = err;
                             } finally {
                                 try {
-                                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                                        _iterator2.return();
+                                    if (!_iteratorNormalCompletion && _iterator.return) {
+                                        _iterator.return();
                                     }
                                 } finally {
-                                    if (_didIteratorError2) {
-                                        throw _iteratorError2;
+                                    if (_didIteratorError) {
+                                        throw _iteratorError;
                                     }
                                 }
                             }
@@ -1510,6 +741,776 @@ var Main = function () {
     }]);
 
     return Main;
+}();
+
+var UI = function () {
+    function UI() {
+        _classCallCheck(this, UI);
+    }
+
+    _createClass(UI, null, [{
+        key: 'buildTable',
+        value: function buildTable() {
+            var html = '';
+            html += '<table class="table table-bordered table-hover table-striped torrent-list" style=\'width: 100%\' id=\'info\'>';
+            html += '<caption>Download infomation</caption>';
+            html += '<thead>';
+            html += '<tr>';
+            html += '<th>resolution</th>';
+            html += '<th>Episode count</th>';
+            html += '<th>Average seeds</th>';
+            html += '<th>Average leechers</th>';
+            html += '<th>Total size</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            var allRes = Anime.availableRes;
+            for (var i = 0; i < allRes.length; i++) {
+                var currRes = allRes[i];
+                var localRes = currRes.res;
+                html += '<tr>';
+                html += '<td>' + (localRes === -1 ? 'Others' : localRes + 'p') + '</td>';
+                html += '<td>' + Anime.getAmountOfEpsFromRes(localRes, true) + '</td>';
+                html += '<td>' + Anime.avgSeedsForRes(localRes, true) + '</td>';
+                html += '<td>' + Anime.avgPeersForRes(localRes, true) + '</td>';
+                html += '<td>' + Anime.getTotalSizeForRes(localRes, true) + ' (aprox)</td>';
+                html += '</tr>';
+            }
+            html += '</tbody>';
+            html += '</table>';
+            return html;
+        }
+    }, {
+        key: 'stateChangeAcceptSelect',
+        value: function stateChangeAcceptSelect(state) {
+            // @ts-ignore
+            $("#acceptSelect").enableButton(state);
+        }
+    }, {
+        key: 'autoEnableAcceptSelect',
+        value: function autoEnableAcceptSelect() {
+            var selection = $("#animeSelection option:selected");
+            UI.stateChangeAcceptSelect(selection.length > 0);
+        }
+    }, {
+        key: 'buildDropdownSelections',
+        value: function buildDropdownSelections() {
+            var html = '';
+            html += '<select class="form-control" style="margin-right:5px;display: inline;width: auto;" id="downloadRes">';
+            var allRes = Anime.availableRes;
+            for (var i = 0; i < allRes.length; i++) {
+                var currRes = allRes[i];
+                var localRes = currRes.res;
+                html += '<option value=' + localRes + '>' + (localRes === -1 ? 'Others' : localRes + 'p') + '</option>';
+            }
+            html += '</select>';
+            return html;
+        }
+    }, {
+        key: 'builDownloadAlert',
+        value: function builDownloadAlert(type) {
+            var amountOfAnime = 0;
+            var selectedRes = Number.parseInt($('#downloadRes').val());
+            var res = null;
+            var totalSize = null;
+            if (type === 'downloadSelected') {
+                amountOfAnime = $('.checkboxes:checked').length;
+                res = 'custom';
+            } else if (type === 'downloadSelects') {
+                amountOfAnime = $('#animeSelection option:selected').length;
+                totalSize = Utils.getHumanReadableSize(function () {
+                    var localSize = 0;
+                    $('#animeSelection option:selected').each(function () {
+                        var url = this.dataset.url;
+                        localSize += Anime.getEpisodeFromAnchor(url).size;
+                    });
+                    return localSize;
+                }());
+                res = 'custom';
+            } else {
+                amountOfAnime = Anime.getAmountOfEpsFromRes(selectedRes, false);
+                res = selectedRes === -1 ? 'Others' : selectedRes + 'p';
+                totalSize = Anime.getTotalSizeForRes(parseInt(res), false);
+            }
+            var seedLimit = Localstore.getMinSeedsFromStore();
+            if (seedLimit === "-1") {
+                seedLimit = "none";
+            }
+            var html = '';
+            html += '<div class=\'alert alert-success\'>';
+            html += '<div><strong>Download: ' + res + '</strong></div> <br />';
+            html += '<div><strong>Seed Limit: ' + seedLimit + '</strong></div>';
+            if (totalSize !== null) {
+                html += '<br /><div><strong>Total size: ' + totalSize + ' (aprox)</strong></div>';
+            }
+            html += '<p>You are about to download ' + amountOfAnime + ' ep(s)</p>';
+            html += '<p>This will cause ' + amountOfAnime + ' download pop-up(s) Are you sure you want to continue?</p>';
+            html += '<p>If there are a lot of eps, your browser might stop responding for a while. This is normal. If you are on Google Chrome, it will ask you to allow multiple-downloads</p>';
+            html += '<button type="button" class="btn btn-warning downloadButton" id=\'alertButtonCancel\'>Cancel</button>';
+            html += '<button type="button" class="btn btn-success downloadButton" id=\'alertButton\'>Okay</button>';
+            html += '<button type="button" class="btn btn-success downloadButton" id=\'downloadZip\'>Download as zip</button>';
+            html += "<div class='hidden' id='loadingContainer'>";
+            html += "<hr />";
+            html += "<div class=\"progress\">";
+            html += "<div id='progressBarForZip' class=\"progress-bar progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"45\" aria-valuemin=\"0\" aria-valuemax=\"100\" style='width: 100%;'>Current status: <span id='progressStatus'></span></div>";
+            html += "</div>";
+            html += "</div>";
+            html += '</div>';
+            return html;
+        }
+    }, {
+        key: 'showAjaxErrorAlert',
+        value: function showAjaxErrorAlert(ajaxInfo) {
+            var parseError = $('#parseErrors');
+            if (!parseError.is(':hidden')) {
+                return null;
+            }
+            parseError.html('');
+            var html = '';
+            html += '<div class=\'alert alert-danger\'>';
+            html += '<p>There was an error in getting the information from page: \'' + ajaxInfo.error.pageAtError + '\'</p>';
+            html += '<button id=\'errorClose\' class="btn btn-primary"> close </button>';
+            html += '</div>';
+            parseError.show();
+            parseError.html(html);
+            $('#errorClose').off('click').on('click', function () {
+                $('#parseErrors').slideUp('slow', function () {
+                    $(this).html('');
+                });
+            });
+        }
+    }, {
+        key: 'buildSelect',
+        value: function buildSelect() {
+            var resTOFilter = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "none";
+
+            var html = '';
+            UI.epsInSelect = [];
+            var minSeeds = Number.parseInt(Localstore.getMinSeedsFromStore());
+            html += '<div id=\'selectWrapper\'>';
+            html += '<div id=\'selectContainer\'>';
+            html += '<p>Or you can select episodes here:</p>';
+            html += '<p>Seed limit: ' + (minSeeds === -1 ? 'None' : minSeeds) + '</p>';
+            html += '<select class="form-control" id=\'animeSelection\' multiple size=\'20\'>';
+            var allRes = Anime.availableRes;
+            for (var i = 0; i < allRes.length; i++) {
+                var currRes = allRes[i];
+                var localRes = currRes.res;
+                var eps = Anime.getEpsForRes(localRes, false);
+                for (var j = 0, len = eps.length; j < len; j++) {
+                    var currentEp = eps[j];
+                    if (resTOFilter == 'none' || currentEp.res == resTOFilter) {
+                        html += '<option data-url=\'' + currentEp.downloadLink + '\'>';
+                        html += currentEp.title + ' - Seeders: ' + currentEp.seeds;
+                        UI.epsInSelect.push(currentEp);
+                        html += '</option>';
+                    } else {
+                        break;
+                    }
+                }
+            }
+            html += '</select>';
+            html += '<span>Filter select control: </span>';
+            var checked = false;
+            for (var _i = 0; _i < allRes.length; _i++) {
+                if (resTOFilter == allRes[_i].res) {
+                    checked = true;
+                }
+                html += '<input type=\'radio\' ' + (checked ? 'checked' : '') + ' data-set= \'' + allRes[_i].res + '\' name=\'filterSelect\'/>' + '<label class="filterLabel">' + (allRes[_i].res === -1 ? 'Others' : allRes[_i].res + 'p') + '</label>';
+                checked = false;
+            }
+            html += '<a id=\'clearResOptions\' data-set=\'none\' >clear resolution filter</a>';
+            html += '<a id=\'selectAllFromControl\'>Select all</a>';
+            html += '</div>';
+            html += '</div>';
+            // @ts-ignore
+            $("#acceptSelect").enableButton(false);
+            return html;
+        }
+    }, {
+        key: 'applySearch',
+        value: function applySearch(textToFilter) {
+            var opts = UI.epsInSelect;
+            var rxp = new RegExp(textToFilter);
+            var optlist = $('#animeSelection').empty();
+            for (var i = 0, len = opts.length; i < len; i++) {
+                var ep = opts[i];
+                if (rxp.test(ep.title)) {
+                    optlist.append('<option data-url=\'' + ep.downloadLink + '\'>' + ep.title + ' - Seeders: ' + ep.seeds + '</option>');
+                }
+            }
+            UI.searchApplied = textToFilter;
+            Utils.sortSelect(document.getElementById("animeSelection"));
+            UI.autoEnableAcceptSelect();
+        }
+    }, {
+        key: 'getAppliedSearch',
+        value: function getAppliedSearch() {
+            return UI.searchApplied;
+        }
+    }, {
+        key: 'getEpsInSelect',
+        value: function getEpsInSelect() {
+            return UI.epsInSelect;
+        }
+    }]);
+
+    return UI;
+}();
+
+UI.epsInSelect = [];
+UI.searchApplied = '';
+
+var Utils = function () {
+    function Utils() {
+        _classCallCheck(this, Utils);
+    }
+
+    _createClass(Utils, null, [{
+        key: 'downloadViaJavaScript',
+        value: function downloadViaJavaScript(url, data, callBack) {
+            var _type = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "POST";
+
+            var fileName = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open(_type, url, true);
+            xhr.responseType = "blob";
+            xhr.withCredentials = true;
+            if (_type == "POST") {
+                xhr.setRequestHeader("Content-type", "application/json");
+            }
+            var hasError = false;
+            var mediaType = null;
+            xhr.onreadystatechange = function () {
+                var error = null;
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (hasError) {
+                        if (xhr.response != null && xhr.response.length > 0) {
+                            error = xhr.response;
+                        } else {
+                            error = "internal server error";
+                        }
+                    }
+                    var contentDispositionHeader = xhr.getResponseHeader("Content-Disposition");
+                    if (fileName == null && contentDispositionHeader != null && contentDispositionHeader.indexOf("filename") > -1) {
+                        fileName = contentDispositionHeader.split("filename").pop();
+                        fileName = fileName.replace("=", "");
+                        fileName = fileName.trim();
+                        fileName = fileName.replace(/"/g, "");
+                    }
+                    var mediaTypeHeader = xhr.getResponseHeader("Content-Type");
+                    if (mediaTypeHeader != null) {
+                        mediaType = mediaTypeHeader;
+                    } else {
+                        mediaType = "application/octet-stream";
+                    }
+                    var blob = xhr.response;
+                    /*let returnFunction = function save() {
+                        if (hasError) {
+                            let error:string = "Unable to download file: '" +fileName+ "' Please download this file manually";
+                            alert(error);
+                            return;
+                        }
+                    }.bind(this, );*/
+                    var saveAsFunc = saveAs.bind(this, blob, fileName, true);
+                    callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
+                } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+                    if (xhr.status !== 200) {
+                        xhr.responseType = "text";
+                        hasError = true;
+                    }
+                }
+            };
+            if (_type === "POST") {
+                xhr.send(JSON.stringify(data));
+            } else {
+                xhr.send();
+            }
+        }
+    }, {
+        key: 'sortSelect',
+        value: function sortSelect(selElem) {
+            var tmpAry = [];
+            for (var i = 0, length = selElem.options.length; i < length; i++) {
+                tmpAry[i] = [];
+                tmpAry[i][0] = selElem.options[i].text;
+                tmpAry[i][1] = selElem.options[i].dataset.url;
+            }
+            tmpAry.sort(function (a, b) {
+                // @ts-ignore
+                return a[0].toUpperCase().localeCompare(b[0].toUpperCase());
+            });
+            selElem.innerHTML = "";
+            for (var _i2 = 0, len = tmpAry.length; _i2 < len; _i2++) {
+                var op = new Option(tmpAry[_i2][0]);
+                op.dataset.url = tmpAry[_i2][1];
+                selElem.options[_i2] = op;
+            }
+        }
+    }, {
+        key: 'injectCss',
+        value: function injectCss(css) {
+            function _isUrl(url) {
+                var matcher = new RegExp(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/);
+                return matcher.test(url);
+            }
+            if (_isUrl(css)) {
+                $("<link>").prop({
+                    "type": "text/css",
+                    "rel": "stylesheet"
+                }).attr("href", css).appendTo("head");
+            } else {
+                $("<style>").prop("type", "text/css").html(css).appendTo("head");
+            }
+        }
+    }, {
+        key: 'addParameter',
+        value: function addParameter(url, parameterName, parameterValue) {
+            var atStart = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+            var replaceDuplicates = true;
+            var urlhash = void 0;
+            var cl = void 0;
+            if (url.indexOf('#') > 0) {
+                cl = url.indexOf('#');
+                urlhash = url.substring(url.indexOf('#'), url.length);
+            } else {
+                urlhash = '';
+                cl = url.length;
+            }
+            var sourceUrl = url.substring(0, cl);
+            var urlParts = sourceUrl.split("?");
+            var newQueryString = "";
+            if (urlParts.length > 1) {
+                var parameters = urlParts[1].split("&");
+                for (var i = 0; i < parameters.length; i++) {
+                    var parameterParts = parameters[i].split("=");
+                    if (!(replaceDuplicates && parameterParts[0] == parameterName)) {
+                        if (newQueryString == "") {
+                            newQueryString = "?";
+                        } else {
+                            newQueryString += "&";
+                        }
+                        newQueryString += parameterParts[0] + "=" + (parameterParts[1] ? parameterParts[1] : '');
+                    }
+                }
+            }
+            if (newQueryString == "") {
+                newQueryString = "?";
+            }
+            if (atStart) {
+                newQueryString = '?' + parameterName + "=" + parameterValue + (newQueryString.length > 1 ? '&' + newQueryString.substring(1) : '');
+            } else {
+                if (newQueryString !== "" && newQueryString != '?') newQueryString += "&";
+                newQueryString += parameterName + "=" + (parameterValue ? parameterValue : '');
+            }
+            return urlParts[0] + newQueryString + urlhash;
+        }
+    }, {
+        key: 'getElementFromJqueryArray',
+        value: function getElementFromJqueryArray(elm, index) {
+            return elm.filter(function (i) {
+                return i === index;
+            });
+        }
+    }, {
+        key: 'getTable',
+        value: function getTable() {
+            return $('table');
+        }
+    }, {
+        key: 'getQueryFromUrl',
+        value: function getQueryFromUrl(url) {
+            return url.split("&").reduce(function (prev, curr, i, arr) {
+                var p = curr.split("=");
+                prev[decodeURIComponent(p[0])] = decodeURIComponent(p[1]);
+                return prev;
+            }, {});
+        }
+    }, {
+        key: 'isjQueryObject',
+        value: function isjQueryObject(obj) {
+            return obj instanceof jQuery || 'jquery' in Object(obj);
+        }
+    }, {
+        key: 'disableButton',
+        value: function disableButton(button) {
+            button.prop('disabled', true);
+        }
+    }, {
+        key: 'enableButton',
+        value: function enableButton(button) {
+            button.prop('disabled', false);
+        }
+        // @ts-ignore
+
+    }, {
+        key: 'doDownloads',
+        value: function doDownloads(event) {
+            $('#crossPage').prop('disabled', true);
+            var type = $(event.target).data('type');
+            var html = UI.builDownloadAlert(type);
+            var urlsToDownload = [];
+            $('#alertUser').html(html).slideDown("slow").show();
+            if (type === 'downloadSelected') {
+                $.each($('.checkboxes:checked').prev('a'), function () {
+                    var ep = Anime.getEpisodeFromAnchor(this);
+                    urlsToDownload.push(ep.downloadLink);
+                });
+            } else if (type === 'downloadSelects') {
+                $.each($('#animeSelection option:selected'), function () {
+                    var url = this.dataset.url;
+                    urlsToDownload.push(url);
+                });
+            } else {
+                var eps = Anime.getEpsForRes(parseInt($('#downloadRes').val()), false);
+                for (var i = 0, len = eps.length; i < len; i++) {
+                    urlsToDownload.push(eps[i].downloadLink);
+                }
+            }
+            bindAlertControls();
+            function bindAlertControls() {
+                $('#alertButtonCancel').on('click', function () {
+                    $('#alertUser').slideUp('slow');
+                    $('#crossPage').prop('disabled', false);
+                });
+                $('#alertButton').on('click', function () {
+                    doIt(urlsToDownload, false);
+                });
+                $("#downloadZip").on("click", function () {
+                    doIt(urlsToDownload, true);
+                });
+            }
+            function doIt(urls, asZip) {
+                var ajaxPromiseMap = new Map();
+                var arrayd = [];
+                for (var _i3 = 0; _i3 < urls.length; _i3++) {
+                    var d = $.Deferred();
+                    ajaxPromiseMap.set(urls[_i3], d);
+                    arrayd.push(d);
+                }
+                $.when.apply($, arrayd).done(function () {
+                    if (!asZip) {
+                        return;
+                    }
+                    // @ts-ignore
+                    var zip = new JSZip();
+                    var errors = [];
+                    if (arrayd.length === 1) {
+                        var blob = arguments[0];
+                        var fileName = arguments[1];
+                        var error = arguments[2];
+                        if (error !== null) {
+                            errors.push(fileName);
+                        } else {
+                            zip.file(fileName, blob);
+                        }
+                    } else {
+                        for (var _i4 = 0; _i4 < arguments.length; _i4++) {
+                            var arg = arguments[_i4];
+                            var _blob = arg[0];
+                            var _fileName = arg[1];
+                            var _error = arg[2];
+                            if (_error !== null) {
+                                errors.push(_fileName);
+                            } else {
+                                zip.file(_fileName, _blob);
+                            }
+                        }
+                    }
+                    if (errors.length > 0) {
+                        var errorMessage = "Unable to download the following files: \n" + errors.join("\n") + "\n Please download these files manually";
+                        alert(errorMessage);
+                    }
+                    $("#progressStatus").text("Generating zip file...");
+                    zip.generateAsync({ type: "blob" }).then(function (blob) {
+                        saveAs(blob, Anime.currentAnime + ".zip");
+                        $("#loadingContainer").hide();
+                        $("#progressStatus").text(null);
+                        $("#progressBarForZip").width(0);
+                        $('#alertUser').slideUp('slow');
+                    }, function (err) {
+                        alert(err);
+                    });
+                });
+                var timerOffset = 0;
+                if (asZip) {
+                    $("#loadingContainer").show();
+                }
+                var count = 0;
+
+                var _loop2 = function _loop2(currentUrl, deferr) {
+                    var ep = Anime.getEpisodeFromUrl(currentUrl);
+                    var fileName = ep.title.replace(/ /g, "_") + ".torrent";
+                    setTimeout(function () {
+                        count++;
+                        Utils.downloadViaJavaScript(currentUrl, undefined, function (blob, fileName, hasError, error, saveFunc) {
+                            if (!asZip) {
+                                saveFunc();
+                            } else {
+                                var percent = Math.floor(100 * count / ajaxPromiseMap.size);
+                                var doneAsString = percent + "%";
+                                $("#progressStatus").text("Downloading torrents: " + doneAsString);
+                                $("#progressBarForZip").width(doneAsString);
+                            }
+                            if (hasError) {
+                                deferr.resolve(blob, fileName, error);
+                            } else {
+                                deferr.resolve(blob, fileName, null);
+                            }
+                        }, "GET", fileName);
+                    }, timerOffset);
+                    timerOffset += 450;
+                };
+
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
+
+                try {
+                    for (var _iterator2 = ajaxPromiseMap[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var _ref3 = _step2.value;
+
+                        var _ref4 = _slicedToArray(_ref3, 2);
+
+                        var currentUrl = _ref4[0];
+                        var deferr = _ref4[1];
+
+                        _loop2(currentUrl, deferr);
+                    }
+                } catch (err) {
+                    _didIteratorError2 = true;
+                    _iteratorError2 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                            _iterator2.return();
+                        }
+                    } finally {
+                        if (_didIteratorError2) {
+                            throw _iteratorError2;
+                        }
+                    }
+                }
+
+                if (!asZip) {
+                    $('#alertUser').slideUp('slow');
+                }
+                $('#crossPage').prop('disabled', false);
+            }
+        }
+    }, {
+        key: 'checkBoxValid',
+        value: function checkBoxValid(checkbox) {
+            return checkbox.is(':checked');
+        }
+        //TODO: check this
+
+    }, {
+        key: '_minSeedsSet',
+        value: function _minSeedsSet() {
+            var seeds = Localstore.getMinSeedsFromStore();
+            if (seeds !== null && seeds.length > 0) {
+                return Number.parseInt(seeds) !== 1;
+            }
+            return false;
+        }
+    }, {
+        key: 'getCurrentPageOffset',
+        value: function getCurrentPageOffset() {
+            return parseInt(typeof QueryString.p === 'undefined' ? 1 : QueryString.p);
+        }
+    }, {
+        key: 'arrayCopy',
+        value: function arrayCopy(array) {
+            var deep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+            return $.extend(deep, [], array);
+        }
+    }, {
+        key: 'cleanAvailableResolutions',
+        value: function cleanAvailableResolutions() {
+            var avRes = Utils.arrayCopy(Anime.availableRes, true);
+            for (var i = 0, len = avRes.length; i < len; i++) {
+                var currentRes = avRes[i].res;
+                if (Anime.getAmountOfEpsFromRes(currentRes, true) === 0) {
+                    Anime.removeAvailableResolutions(currentRes);
+                }
+            }
+        }
+    }, {
+        key: 'sortAllControls',
+        value: function sortAllControls() {
+            Utils.sortSelect(document.getElementById('animeSelection'));
+            Utils.sortSelect(document.getElementById('downloadRes'));
+            // @ts-ignore
+            $('#info').sortTable(0);
+        }
+    }, {
+        key: 'reBindSelectFilters',
+        value: function reBindSelectFilters() {
+            // @ts-ignore
+            $('input[name=\'filterSelect\']').offOn('change', handleSelect);
+            // @ts-ignore
+            $('#clearResOptions').offOn('click', handleSelect);
+            // @ts-ignore
+            $("#animeSelection").offOn("click", function () {
+                UI.autoEnableAcceptSelect();
+            });
+            // @ts-ignore
+            $("#selectAllFromControl").offOn("click", function () {
+                var allSelected = $("#animeSelection option:selected").length === $("#animeSelection option").length;
+                if (allSelected) {
+                    $(this).text("Select all");
+                    $("#animeSelection option").prop("selected", false);
+                } else {
+                    $(this).text("deselect all");
+                    $("#animeSelection option").prop("selected", true);
+                }
+                UI.autoEnableAcceptSelect();
+            });
+            function handleSelect(event) {
+                var resTOFilter = $(event.target).data('set');
+                $('#selectAnime').html(UI.buildSelect(resTOFilter));
+                Utils.sortAllControls();
+                var searchApplied = UI.getAppliedSearch();
+                if (searchApplied !== '') {
+                    UI.applySearch(searchApplied);
+                }
+                Utils.reBindSelectFilters();
+            }
+        }
+    }, {
+        key: 'getHumanReadableSize',
+        value: function getHumanReadableSize(from) {
+            var decimals = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 3;
+
+            var bits = 0;
+            if (Array.isArray(from)) {
+                for (var i = 0; i < from.length; i++) {
+                    var ep = from[i];
+                    bits += ep.size;
+                }
+            } else if (typeof from === 'number') {
+                bits = from;
+            } else {
+                bits += from.size;
+            }
+            function formatBytes(bytes, decimals) {
+                if (bytes == 0) {
+                    return '0 Byte';
+                }
+                var k = 1024;
+                var dm = decimals + 1 || 3;
+                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                var i = Math.floor(Math.log(bytes) / Math.log(k));
+                return (bytes / Math.pow(k, i)).toPrecision(dm) + ' ' + sizes[i];
+            }
+            return formatBytes(bits, decimals);
+        }
+    }]);
+
+    return Utils;
+}();
+
+var DataParser = function () {
+    function DataParser(table) {
+        _classCallCheck(this, DataParser);
+
+        this.table = null;
+        this.table = table;
+    }
+
+    _createClass(DataParser, [{
+        key: 'parseTable',
+        value: function parseTable(currentPage) {
+            var trRow = this.table.find('img[src*=\'/static/img/icons/nyaa/1_2.png\']').closest('tr');
+            var eps = [];
+            $.each($(trRow), function () {
+                var resInfo = parseRes(this);
+                if (resInfo === null) {
+                    Anime.addAvailableResolutions(-1, null);
+                } else {
+                    Anime.addAvailableResolutions(resInfo.res, resInfo.fullRes);
+                }
+                var info = getEpisodeInfo(this);
+                eps.push(new Episode(typeof resInfo.res === 'undefined' ? -1 : resInfo.res, info.currentDownloadLink, info.seeds, info.leech, info.uid, currentPage, info.title, info.size));
+            });
+            return eps;
+            function parseRes(eventContent) {
+                var supportedRes = Anime.supportedRes;
+                for (var i = 0; i < supportedRes.length; i++) {
+                    var currRes = supportedRes[i].res;
+                    var currFullRes = supportedRes[i].fullRes;
+                    if ($(eventContent).children('td:nth-child(2)').text().indexOf(currRes + 'p') > -1 || $(eventContent).children('td:nth-child(2)').text().indexOf(currFullRes) > -1) {
+                        return supportedRes[i];
+                    }
+                }
+            }
+            function getEpisodeInfo(eventContent) {
+                var _eventContent = $(eventContent);
+                var currentDownloadLink = Anime.getTdFromTable(_eventContent, 3).find("a")[0].href;
+                function getTextContent(idx) {
+                    return isNaN(parseInt(Anime.getTdFromTable(_eventContent, idx).text())) ? 0 : parseInt(Anime.getTdFromTable(_eventContent, idx).text());
+                }
+                function convertToString(ev) {
+                    var sizeValue = Anime.getTdFromTable(ev, 4).text();
+                    var sizeText = $.trim(sizeValue.split(' ').pop());
+                    var intValue = parseInt(sizeValue);
+                    switch (sizeText) {
+                        case "MiB":
+                            return Math.pow(2, 20) * intValue;
+                        case "GiB":
+                            return intValue * 1073741824;
+                        default:
+                            return 0;
+                    }
+                }
+                var seeds = getTextContent(6);
+                var leech = getTextContent(7);
+                var title = Anime.getTdFromTable(_eventContent, 2).text().trim().substring(1).trim();
+                var uid = Anime.getUidFromJqueryObject(_eventContent);
+                var size = convertToString(_eventContent);
+                return {
+                    'currentDownloadLink': currentDownloadLink,
+                    'seeds': seeds,
+                    'leech': leech,
+                    'title': title,
+                    'uid': uid,
+                    "size": size
+                };
+            }
+        }
+    }]);
+
+    return DataParser;
+}();
+
+var Localstore = function () {
+    function Localstore() {
+        _classCallCheck(this, Localstore);
+    }
+
+    _createClass(Localstore, null, [{
+        key: 'getMinSeedsFromStore',
+        value: function getMinSeedsFromStore() {
+            var lo = localStorage.getItem('minSeeds');
+            return lo === null ? "-1" : lo;
+        }
+    }, {
+        key: 'setMinSeedsFromStore',
+        value: function setMinSeedsFromStore(seeds) {
+            localStorage.setItem('minSeeds', seeds.toString());
+        }
+    }, {
+        key: 'removeMinSeedsFromStore',
+        value: function removeMinSeedsFromStore() {
+            localStorage.removeItem('minSeeds');
+        }
+    }]);
+
+    return Localstore;
 }();
 
 Main.main();

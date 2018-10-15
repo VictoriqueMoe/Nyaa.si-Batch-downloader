@@ -1,5 +1,7 @@
+///<reference path="AbstractEps.ts"/>
+
 type resType = { res: number, fullRes: string };
-class Anime extends _AbstractEps {
+class Anime extends AbstractEps {
     private constructor() {
         super();
     }

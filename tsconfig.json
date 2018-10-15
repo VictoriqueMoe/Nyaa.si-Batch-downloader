@@ -11,7 +11,8 @@
     "target": "esnext",
     "module": "none",
     "allowSyntheticDefaultImports": true,
-    "removeComments": false
+    "removeComments": false,
+
   },
   "compileOnSave": false,
   "exclude": ["*.js"]
