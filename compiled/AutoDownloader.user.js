@@ -41,7 +41,7 @@ class AbstractEps {
     }
 }
 AbstractEps.eps = []; // this is the main array that holds all the episodes per anime
-///<reference path="AbstractEps.ts"/>
+/// <reference path="AbstractEps.ts"/>
 class Anime extends AbstractEps {
     constructor() {
         super();
@@ -103,7 +103,7 @@ class Anime extends AbstractEps {
         for (let i = 0, len = eps.length; i < len; i++) {
             let currentEp = eps[i];
             if (currentEp.res === res) {
-                seedCount += currentEp.res;
+                seedCount += currentEp.seeds;
             }
         }
         return Math.round(seedCount / epCount);

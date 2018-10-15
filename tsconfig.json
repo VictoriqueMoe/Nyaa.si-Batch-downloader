@@ -10,9 +10,7 @@
     "allowJs": false,
     "target": "esnext",
     "module": "none",
-    "allowSyntheticDefaultImports": true,
-    "removeComments": false,
-
+    "allowSyntheticDefaultImports": true
   },
   "compileOnSave": false,
   "exclude": ["*.js"]

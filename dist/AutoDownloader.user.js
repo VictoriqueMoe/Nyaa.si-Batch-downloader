@@ -66,9 +66,7 @@ var AbstractEps = function () {
     return AbstractEps;
 }();
 
-AbstractEps.eps = []; // this is the main array that holds all the episodes per anime
-///<reference path="AbstractEps.ts"/>
-
+AbstractEps.eps = [];
 var Anime = function (_AbstractEps) {
     _inherits(Anime, _AbstractEps);
 
@@ -129,7 +127,7 @@ var Anime = function (_AbstractEps) {
             for (var i = 0, len = eps.length; i < len; i++) {
                 var currentEp = eps[i];
                 if (currentEp.res === res) {
-                    seedCount += currentEp.res;
+                    seedCount += currentEp.seeds;
                 }
             }
             return Math.round(seedCount / epCount);
@@ -267,7 +265,6 @@ var Anime = function (_AbstractEps) {
         key: 'getPageUrls',
         value: function getPageUrls() {
             function range(start, end) {
-                // @ts-ignore
                 return Array(end - start + 1).fill().map(function (_, idx) {
                     return start + idx;
                 });
@@ -446,7 +443,7 @@ var QueryString = function () {
     }
     return query_string;
 }();
-// Download fix for firefox
+
 HTMLElement.prototype.click = function () {
     var evt = this.ownerDocument.createEvent('MouseEvents');
     evt.initMouseEvent('click', true, true, this.ownerDocument.defaultView, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
@@ -688,7 +685,6 @@ var Main = function () {
                             }
                         })();
                     } else {
-                        // noinspection JSMismatchedCollectionQueryUpdate
                         var tableInfoElm = $('#tableInfo');
                         tableInfoElm.html('<p>Please wait while we re-calculate the Episodes</p>');
                         var _currentPage = Utils.getCurrentPageOffset();
@@ -783,7 +779,6 @@ var UI = function () {
     }, {
         key: 'stateChangeAcceptSelect',
         value: function stateChangeAcceptSelect(state) {
-            // @ts-ignore
             $("#acceptSelect").enableButton(state);
         }
     }, {
@@ -923,7 +918,7 @@ var UI = function () {
             html += '<a id=\'selectAllFromControl\'>Select all</a>';
             html += '</div>';
             html += '</div>';
-            // @ts-ignore
+
             $("#acceptSelect").enableButton(false);
             return html;
         }
@@ -1006,13 +1001,7 @@ var Utils = function () {
                         mediaType = "application/octet-stream";
                     }
                     var blob = xhr.response;
-                    /*let returnFunction = function save() {
-                        if (hasError) {
-                            let error:string = "Unable to download file: '" +fileName+ "' Please download this file manually";
-                            alert(error);
-                            return;
-                        }
-                    }.bind(this, );*/
+
                     var saveAsFunc = saveAs.bind(this, blob, fileName, true);
                     callBack.call(this, blob, fileName, hasError, error, saveAsFunc);
                 } else if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
@@ -1038,7 +1027,6 @@ var Utils = function () {
                 tmpAry[i][1] = selElem.options[i].dataset.url;
             }
             tmpAry.sort(function (a, b) {
-                // @ts-ignore
                 return a[0].toUpperCase().localeCompare(b[0].toUpperCase());
             });
             selElem.innerHTML = "";
@@ -1143,8 +1131,6 @@ var Utils = function () {
         value: function enableButton(button) {
             button.prop('disabled', false);
         }
-        // @ts-ignore
-
     }, {
         key: 'doDownloads',
         value: function doDownloads(event) {
@@ -1194,7 +1180,7 @@ var Utils = function () {
                     if (!asZip) {
                         return;
                     }
-                    // @ts-ignore
+
                     var zip = new JSZip();
                     var errors = [];
                     if (arrayd.length === 1) {
@@ -1305,8 +1291,6 @@ var Utils = function () {
         value: function checkBoxValid(checkbox) {
             return checkbox.is(':checked');
         }
-        //TODO: check this
-
     }, {
         key: '_minSeedsSet',
         value: function _minSeedsSet() {
@@ -1344,21 +1328,20 @@ var Utils = function () {
         value: function sortAllControls() {
             Utils.sortSelect(document.getElementById('animeSelection'));
             Utils.sortSelect(document.getElementById('downloadRes'));
-            // @ts-ignore
+
             $('#info').sortTable(0);
         }
     }, {
         key: 'reBindSelectFilters',
         value: function reBindSelectFilters() {
-            // @ts-ignore
             $('input[name=\'filterSelect\']').offOn('change', handleSelect);
-            // @ts-ignore
+
             $('#clearResOptions').offOn('click', handleSelect);
-            // @ts-ignore
+
             $("#animeSelection").offOn("click", function () {
                 UI.autoEnableAcceptSelect();
             });
-            // @ts-ignore
+
             $("#selectAllFromControl").offOn("click", function () {
                 var allSelected = $("#animeSelection option:selected").length === $("#animeSelection option").length;
                 if (allSelected) {

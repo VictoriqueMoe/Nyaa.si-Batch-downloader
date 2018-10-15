@@ -1,4 +1,4 @@
-///<reference path="AbstractEps.ts"/>
+/// <reference path="AbstractEps.ts"/>
 
 type resType = { res: number, fullRes: string };
 class Anime extends AbstractEps {
@@ -82,7 +82,7 @@ class Anime extends AbstractEps {
         for (let i: number = 0, len: number = eps.length; i < len; i++) {
             let currentEp: Episode = eps[i];
             if (currentEp.res === res) {
-                seedCount += currentEp.res;
+                seedCount += currentEp.seeds;
             }
         }
         return Math.round(seedCount / epCount);
