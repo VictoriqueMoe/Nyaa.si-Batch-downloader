@@ -382,7 +382,6 @@ class Main {
             styles += '#downloadCustomButton{float:right;}';
             styles += '#findEp{float: right; position: relative; bottom: 20px; width: 180px;}';
             styles += "#loadingContainer{margin-top: 15px; margin-bottom: 45px;}";
-            Utils.injectCss('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
             Utils.injectCss(styles);
         }
         function buildPanel() {
@@ -390,7 +389,7 @@ class Main {
             html += '<div class="panel panel-success">';
             html += '<div class="panel-heading">';
             html += '<h3 id="panel-title" class="panel-title"></h3>';
-            html += '<i class="fa fa-minus collapsem" id="collapseToggle" title="Hide"></i>';
+            html += '<i class="glyphicon glyphicon-minus collapsem" id="collapseToggle" title="Hide"></i>';
             html += '</div>';
             html += '<div class="panel-body" id="pannelContent"></div>';
             html += '</div>';
@@ -567,11 +566,11 @@ class Main {
             $('#pannelContent').stop(true, true).slideToggle('slow', function () {
                 let elm = $('#collapseToggle');
                 if ($(this).is(':hidden')) {
-                    elm.removeClass('fa-minus').addClass('fa-plus');
+                    elm.removeClass('glyphicon-minus').addClass('glyphicon-plus');
                     elm.attr('title', 'Show');
                 }
                 else {
-                    elm.addClass('fa-minus').removeClass('fa-plus');
+                    elm.addClass('glyphicon-minus').removeClass('glyphicon-plus');
                     elm.attr('title', 'Hide');
                 }
             });
